@@ -4,37 +4,57 @@ use std::{collections::HashMap, net::SocketAddr};
 use uuid::Uuid;
 use chrono;
 
+use crate::encryption::hash;
+
 const EXP_PER_LEVEL: u8 = 100;
 
 
-#[derive(Default)]
-struct AppState {
-    users: HashMap<String, User>,
-    pets: HashMap<String, Pet>,
-    pet_yards: HashMap<String, PetYard>,
+#[derive(Default, Debug, serde::Serialize, serde::Deserialize, PartialEq, Eq, Clone)]
+pub struct AppState {
+    pub users: HashMap<String, User>,
+    pub pets: HashMap<String, Pet>,
+    pub pet_yards: HashMap<String, PetYard>,
+    pub tokens: HashMap<String, UserToken>,
 }
 
 impl AppState {
-    fn new() -> Self {
+    pub fn new() -> Self {
         Self {
             users: HashMap::new(),
             pets: HashMap::new(),
             pet_yards: HashMap::new(),
+            tokens: HashMap::new(),
         }
+    }
+
+    pub fn get_user_by_username(&self, username: &str) -> Option<&User> {
+        for user in self.users.values() {
+            if user.username == username {
+                return Some(user);
+            }
+        }
+        None
+    }
+
+    pub fn create_token(&mut self, user: &User) -> String {
+        let token = UserToken::new(user.uuid.clone(), Uuid::new_v4().to_string());
+        self.tokens.insert(token.token.clone(), token.clone());
+
+        token.token
     }
 }
 
 
-#[derive(Debug, serde::Serialize, serde::Deserialize)]
-struct User {
+#[derive(Debug, serde::Serialize, serde::Deserialize, PartialEq, Eq, Clone)]
+pub struct User {
     // Basic user info
     uuid: String,
     join_timestamp: u64,
     username: String,
     email: String,
     // Password is hashed and salted
-    password: String,
-
+    h_s_password: String,
+    salt: String,
     // UUID of users's pets
     pets: Vec<String>,
     // UUIDs of user's pet yards
@@ -45,8 +65,61 @@ struct User {
     chat_logs: HashMap<String, Vec<DirectMessage>>,
 }
 
-#[derive(Debug, serde::Serialize, serde::Deserialize)]
-struct DirectMessage {
+impl User {
+    pub fn new(username: String, email: String, password: String) -> Self {
+        let salt = Uuid::new_v4().to_string();
+        let salted_password = format!("{}{}", password, salt);
+        let hashed_password = hash(&salted_password);
+
+        Self {
+            uuid: Uuid::new_v4().to_string(),
+            join_timestamp: chrono::Utc::now().timestamp_millis() as u64,
+            username,
+            email,
+            h_s_password: hashed_password,
+            salt,
+            pets: vec![],
+            owned_pet_yards: vec![],
+            joined_pet_yards: vec![],
+            chat_logs: HashMap::new(),
+        }
+    }
+
+    pub fn compare_password(&self, password: &str) -> bool {
+        // Compare the hashed and salted password with the input password
+        let salted_password = format!("{}{}", password, self.salt);
+        let hashed_password = hash(&salted_password);
+
+        hashed_password == self.h_s_password
+    }
+
+    pub fn get_uuid(&self) -> String {
+        self.uuid.clone()
+    }
+}
+
+#[derive(Debug, serde::Serialize, serde::Deserialize, PartialEq, Eq, Clone)]
+pub struct UserToken {
+    uuid: String,
+    token: String,
+    creation_timestamp: u64,
+    expiration_timestamp: u64,
+}
+
+impl UserToken {
+    pub fn new(uuid: String, token: String) -> Self {
+        Self {
+            uuid,
+            token,
+            creation_timestamp: chrono::Utc::now().timestamp_millis() as u64,
+            expiration_timestamp: chrono::Utc::now().timestamp_millis() as u64 + 1000 * 60 * 60 * 24, // 24 hours
+        }
+    }
+}
+
+
+#[derive(Debug, serde::Serialize, serde::Deserialize, PartialEq, Eq, Clone)]
+pub struct DirectMessage {
     sender: String,
     receiver: String,
     encrypted_msg: String,
@@ -54,7 +127,7 @@ struct DirectMessage {
 }
 
 impl DirectMessage {
-    fn new(sender: String, receiver: String, encrypted_msg: String) -> Self {
+    pub fn new(sender: String, receiver: String, encrypted_msg: String) -> Self {
         Self {
             sender,
             receiver,
@@ -63,14 +136,14 @@ impl DirectMessage {
         }
     }
 
-    fn decrypt(&self, key: String) -> String {
+    pub fn decrypt(&self, key: String) -> String {
         // Decrypt the message using the key
         self.encrypted_msg.clone() // Placeholder
     }
 }
 
-#[derive(Debug, serde::Serialize, serde::Deserialize)]
-struct Pet {
+#[derive(Debug, serde::Serialize, serde::Deserialize, PartialEq, Eq, Clone)]
+pub struct Pet {
     uuid: String,
     name: String,
     image: u64,
@@ -82,7 +155,7 @@ struct Pet {
 }
 
 impl Pet {
-    fn new(name: String, species: String) -> Self {
+    pub fn new(name: String, species: String) -> Self {
         Self {
             uuid: Uuid::new_v4().to_string(),
             name,
@@ -94,43 +167,43 @@ impl Pet {
         }
     }
 
-    fn set_pet_yard(&mut self, pet_yard_uuid: String) {
+    pub fn set_pet_yard(&mut self, pet_yard_uuid: String) {
         self.pet_yard = Some(pet_yard_uuid);
     }
 
-    fn remove_pet_yard(&mut self) {
+    pub fn remove_pet_yard(&mut self) {
         self.pet_yard = None;
     }
 
-    fn get_pet_yard(&self) -> Option<String> {
+    pub fn get_pet_yard(&self) -> Option<String> {
         self.pet_yard.clone()
     }
 
-    fn get_name(&self) -> String {
+    pub fn get_name(&self) -> String {
         self.name.clone()
     }
 
-    fn set_name(&mut self, name: String) {
+    pub fn set_name(&mut self, name: String) {
         self.name = name;
     }
 
-    fn get_species(&self) -> String {
+    pub fn get_species(&self) -> String {
         self.species.clone()
     }
 
-    fn set_species(&mut self, species: String) {
+    pub fn set_species(&mut self, species: String) {
         self.species = species;
     }
 
-    fn get_level(&self) -> u128 {
+    pub fn get_level(&self) -> u128 {
         self.level
     }
 
-    fn get_experience(&self) -> u8 {
+    pub fn get_experience(&self) -> u8 {
         self.experience
     }
 
-    fn add_experience(&mut self, experience: u8) {
+    pub fn add_experience(&mut self, experience: u8) {
         self.experience += experience;
         if self.experience >= EXP_PER_LEVEL {
             self.level += 1;
@@ -140,8 +213,8 @@ impl Pet {
 }
 
 
-#[derive(Debug, serde::Serialize, serde::Deserialize)]
-struct PetYard {
+#[derive(Debug, serde::Serialize, serde::Deserialize, PartialEq, Eq, Clone)]
+pub struct PetYard {
     uuid: String,
     name: String,
     // UUID of the user who owns the pet yard
@@ -153,7 +226,7 @@ struct PetYard {
 }
 
 impl PetYard {
-    fn new(name: String, owner_uuid: String) -> Self {
+    pub fn new(name: String, owner_uuid: String) -> Self {
         Self {
             uuid: Uuid::new_v4().to_string(),
             name,
@@ -163,38 +236,38 @@ impl PetYard {
         }
     }
 
-    fn add_member(&mut self, member_uuid: String) {
+    pub fn add_member(&mut self, member_uuid: String) {
         if !self.members.contains(&member_uuid) {
             self.members.push(member_uuid);
         }
     }
 
-    fn remove_member(&mut self, member_uuid: String) {
+    pub fn remove_member(&mut self, member_uuid: String) {
         self.members.retain(|uuid| uuid != &member_uuid);
     }
 
-    fn get_members(&self) -> Vec<String> {
+    pub fn get_members(&self) -> Vec<String> {
         // Return members along with the owner
         let mut members = self.members.clone();
         members.push(self.owner.clone());
         members
     }
 
-    fn add_pet(&mut self, pet_uuid: String) {
+    pub fn add_pet(&mut self, pet_uuid: String) {
         if !self.pets.contains(&pet_uuid) {
             self.pets.push(pet_uuid);
         }
     }
 
-    fn remove_pet(&mut self, pet_uuid: String) {
+    pub fn remove_pet(&mut self, pet_uuid: String) {
         self.pets.retain(|uuid| uuid != &pet_uuid);
     }
 
-    fn get_pets(&self) -> Vec<String> {
+    pub fn get_pets(&self) -> Vec<String> {
         self.pets.clone()
     }
 
-    fn get_owner(&self) -> String {
+    pub fn get_owner(&self) -> String {
         self.owner.clone()
     }
 }
