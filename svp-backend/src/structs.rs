@@ -1,6 +1,8 @@
+use axum::http::header::Keys;
 use serde::{Deserialize, Serialize};
 use std::{collections::HashMap, net::SocketAddr};
 use uuid::Uuid;
+use chrono;
 
 const EXP_PER_LEVEL: u8 = 100;
 
@@ -39,6 +41,32 @@ struct User {
     owned_pet_yards: Vec<String>,
     // UUIDs of pet yards the user has joined
     joined_pet_yards: Vec<String>,
+    // Chat logs with other users
+    chat_logs: HashMap<String, Vec<DirectMessage>>,
+}
+
+#[derive(Debug, serde::Serialize, serde::Deserialize)]
+struct DirectMessage {
+    sender: String,
+    receiver: String,
+    encrypted_msg: String,
+    timestamp: u64,
+}
+
+impl DirectMessage {
+    fn new(sender: String, receiver: String, encrypted_msg: String) -> Self {
+        Self {
+            sender,
+            receiver,
+            encrypted_msg,
+            timestamp: chrono::Utc::now().timestamp_millis() as u64,
+        }
+    }
+
+    fn decrypt(&self, key: String) -> String {
+        // Decrypt the message using the key
+        self.encrypted_msg.clone() // Placeholder
+    }
 }
 
 #[derive(Debug, serde::Serialize, serde::Deserialize)]
