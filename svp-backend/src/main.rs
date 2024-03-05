@@ -1,6 +1,7 @@
 use axum::{response::IntoResponse, routing::get, Router};
-use axum_server::tls_openssl;
+use axum_server::tls_rustls;
 
+use axum_server::tls_rustls::RustlsConfig;
 use tower_http::{
     compression::CompressionLayer, limit::RequestBodyLimitLayer, trace::TraceLayer,
     validate_request::ValidateRequestHeaderLayer,
@@ -43,24 +44,18 @@ async fn main() {
 
     let app: Router = Router::new().route("/", get(index));
 
-    // Create TLS configuration with native_tls
-    let tls = tls::TlsAcceptor::from(
-        tokio_rustls::TlsAcceptor::from(
-            tokio_rustls::rustls::ServerConfig::new(tokio_rustls::rustls::NoClientAuth::new()),
-        )
-        .configure(|c| c.set_single_cert(
-            tokio_rustls::rustls::internal::pemfile::certs(&mut std::io::BufReader::new(
-                std::fs::File::open("cert.pem").unwrap(),
-            ))
-            .unwrap(),
-            tokio_rustls::rustls::internal::pemfile::rsa_private_keys(&mut std::io::BufReader::new(
-                std::fs::File::open("key.pem").unwrap(),
-            ))
-            .unwrap()
-            .remove(0),
-        ))
-        .expect("invalid key/cert files"),
-    );
+    let config: RustlsConfig = RustlsConfig::from_pem_file(
+        "cert.pem",
+        "key.pem",
+    ).await.unwrap();
+
+    // create app with bind_tls
+    axum_server::bind_rustls(
+        addr,
+        config,
+    ).serve(app.into_make_service())
+    .await
+    .unwrap();
 }
 
 async fn index() -> impl IntoResponse {

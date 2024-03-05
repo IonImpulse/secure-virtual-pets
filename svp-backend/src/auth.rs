@@ -33,7 +33,7 @@ pub async fn login(username: String, password: String) -> impl IntoResponse {
 
     let user = user.unwrap();
 
-    if !user.compare_password(&password) { // Access private field directly
+    if !user.compare_password(&password) {
         return Response::builder()
             .status(StatusCode::UNAUTHORIZED)
             .body("Incorrect password".to_string()) // Convert to String
