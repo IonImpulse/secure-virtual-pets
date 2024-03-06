@@ -27,6 +27,10 @@ impl AppState {
         }
     }
 
+    pub fn get_user_by_uuid(&self, uuid: &str) -> Option<&User> {
+        self.users.get(uuid)
+    }
+
     pub fn get_user_by_username(&self, username: &str) -> Option<&User> {
         for user in self.users.values() {
             if user.username == username {
@@ -41,6 +45,14 @@ impl AppState {
         self.tokens.insert(token.token.clone(), token.clone());
 
         token.token
+    }
+
+    pub fn update_user(&mut self, user: User) {
+        self.users.insert(user.uuid.clone(), user);
+    }
+
+    pub fn delete_user(&mut self, user: User) {
+        self.users.remove(&user.uuid);
     }
 }
 
@@ -85,6 +97,19 @@ impl User {
         }
     }
 
+    pub fn set_email(&mut self, email: String) {
+        self.email = email;
+    }
+
+    pub fn set_password(&mut self, password: String) {
+        let salt = Uuid::new_v4().to_string();
+        let salted_password = format!("{}{}", password, salt);
+        let hashed_password = hash(&salted_password);
+
+        self.h_s_password = hashed_password;
+        self.salt = salt;
+    }
+
     pub fn compare_password(&self, password: &str) -> bool {
         // Compare the hashed and salted password with the input password
         let salted_password = format!("{}{}", password, self.salt);
@@ -95,6 +120,28 @@ impl User {
 
     pub fn get_uuid(&self) -> String {
         self.uuid.clone()
+    }
+
+    pub fn for_user(&self) -> String {
+        serde_json::json!({
+            "uuid": self.uuid,
+            "join_timestamp": self.join_timestamp,
+            "username": self.username,
+            "email": self.email,
+            "pets": self.pets,
+            "owned_pet_yards": self.owned_pet_yards,
+            "joined_pet_yards": self.joined_pet_yards,
+            "chat_logs": self.chat_logs,
+        }).to_string()
+    }
+
+    pub fn for_public(&self) -> String {
+        serde_json::json!({
+            "uuid": self.uuid,
+            "username": self.username,
+            "pets": self.pets,
+            "owned_pet_yards": self.owned_pet_yards,
+        }).to_string()
     }
 }
 
@@ -114,6 +161,22 @@ impl UserToken {
             creation_timestamp: chrono::Utc::now().timestamp_millis() as u64,
             expiration_timestamp: chrono::Utc::now().timestamp_millis() as u64 + 1000 * 60 * 60 * 24, // 24 hours
         }
+    }
+
+    pub fn get_uuid(&self) -> String {
+        self.uuid.clone()
+    }
+
+    pub fn get_token(&self) -> String {
+        self.token.clone()
+    }
+
+    pub fn is_valid(&self) -> bool {
+        self.expiration_timestamp > chrono::Utc::now().timestamp_millis() as u64
+    }
+
+    pub fn refresh(&mut self) {
+        self.expiration_timestamp = chrono::Utc::now().timestamp_millis() as u64 + 1000 * 60 * 60 * 24; // 24 hours
     }
 }
 

@@ -15,6 +15,31 @@ use axum::Json;
 use serde::{Deserialize, Serialize};
 use axum::body::HttpBody;
 
+pub async fn verify_token(token: &str) -> bool {
+    let app_state = APP_STATE.lock().await;
+
+    if app_state.tokens.contains_key(token) {
+        let user_token = app_state.tokens.get(token).unwrap();
+
+        // Check if token is valid
+        return user_token.is_valid();
+    } else {
+        return false;
+    }
+}
+
+pub async fn verify_token_header(headers: &http::HeaderMap) -> bool {
+    let token = headers.get("authorization");
+
+    if token.is_none() {
+        return false;
+    }
+
+    let token = token.unwrap().to_str().unwrap().to_string();
+
+    verify_token(&token).await
+}
+
 /// Handles the login of a user.
 /// The user must provide their username and password.
 /// The password is hashed and salted.
@@ -51,10 +76,10 @@ pub async fn login(username: String, password: String) -> impl IntoResponse {
 }
 
 
-pub async fn signup(username: &str, email: &str, password: &str) -> impl IntoResponse {
+pub async fn signup(username: String, email: String, password: String) -> impl IntoResponse {
     let app_state = APP_STATE.lock().await;
 
-    if app_state.get_user_by_username(username).is_some() {
+    if app_state.get_user_by_username(&username).is_some() {
         return Response::builder()
             .status(StatusCode::CONFLICT)
             .body("Username already exists".to_string()) // Convert to String
@@ -71,4 +96,58 @@ pub async fn signup(username: &str, email: &str, password: &str) -> impl IntoRes
         .status(StatusCode::OK)
         .body("User created".to_string()) // Convert to String
         .unwrap()
+}
+
+pub async fn logout(token: String) -> impl IntoResponse {
+    let mut app_state = APP_STATE.lock().await;
+
+    if app_state.tokens.contains_key(&token) {
+        app_state.tokens.remove(&token);
+    } else {
+        return Response::builder()
+            .status(StatusCode::UNAUTHORIZED)
+            .body("Invalid token".to_string()) // Convert to String
+            .unwrap();
+    }
+
+    Response::builder()
+        .status(StatusCode::OK)
+        .body("Logged out".to_string()) // Convert to String
+        .unwrap()
+}
+
+pub async fn verify(token: String) -> impl IntoResponse {
+    let valid = verify_token(&token).await;
+
+    if valid {
+        Response::builder()
+            .status(StatusCode::OK)
+            .body("Token is valid".to_string()) // Convert to String
+            .unwrap()
+    } else {
+        Response::builder()
+            .status(StatusCode::UNAUTHORIZED)
+            .body("Invalid token".to_string()) // Convert to String
+            .unwrap()
+    }
+}
+
+pub async fn refresh(token: String) -> impl IntoResponse {
+    let mut app_state = APP_STATE.lock().await;
+
+    if app_state.tokens.contains_key(&token) {
+        if let Some(user_token) = app_state.tokens.get_mut(&token) {
+            user_token.refresh();
+
+            return Response::builder()
+                .status(StatusCode::OK)
+                .body("Token refreshed".to_string()) // Convert to String
+                .unwrap()
+        }
+    }
+
+    Response::builder()
+            .status(StatusCode::UNAUTHORIZED)
+            .body("Invalid token".to_string()) // Convert to String
+            .unwrap()
 }
