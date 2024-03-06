@@ -10,7 +10,7 @@ use crate::structs::User;
 use crate::encryption::{encrypt, decrypt};
 use crate::APP_STATE;
 use axum::http::{self, Response, StatusCode};
-use axum::response::IntoResponse;
+use aide::axum::IntoApiResponse;
 use axum::Json;
 use serde::{Deserialize, Serialize};
 use axum::body::HttpBody;
@@ -29,7 +29,7 @@ pub async fn verify_token(token: &str, uuid: &str) -> bool {
 }
 
 pub async fn verify_token_header(headers: &http::HeaderMap, uuid: &str) -> bool {
-    let token = headers.get("authorization");
+    let token = headers.get("X-Auth-Key");
 
     if token.is_none() {
         return false;
@@ -44,7 +44,7 @@ pub async fn verify_token_header(headers: &http::HeaderMap, uuid: &str) -> bool 
 /// The user must provide their username and password.
 /// The password is hashed and salted.
 /// The server will return a token if the login is successful.
-pub async fn login(username: String, password: String) -> impl IntoResponse {
+pub async fn login(username: String, password: String) -> impl IntoApiResponse  {
     let app_state = APP_STATE.lock().await;
 
     let user = app_state.get_user_by_username(&username);
@@ -76,7 +76,7 @@ pub async fn login(username: String, password: String) -> impl IntoResponse {
 }
 
 
-pub async fn signup(username: String, email: String, password: String) -> impl IntoResponse {
+pub async fn signup(username: String, email: String, password: String) -> impl IntoApiResponse  {
     let app_state = APP_STATE.lock().await;
 
     if app_state.get_user_by_username(&username).is_some() {
@@ -98,7 +98,7 @@ pub async fn signup(username: String, email: String, password: String) -> impl I
         .unwrap()
 }
 
-pub async fn logout(token: String) -> impl IntoResponse {
+pub async fn logout(token: String) -> impl IntoApiResponse  {
     let mut app_state = APP_STATE.lock().await;
 
     if app_state.tokens.contains_key(&token) {
@@ -116,7 +116,7 @@ pub async fn logout(token: String) -> impl IntoResponse {
         .unwrap()
 }
 
-pub async fn verify(token: String, uuid: String) -> impl IntoResponse {
+pub async fn verify(token: String, uuid: String) -> impl IntoApiResponse  {
     let valid = verify_token(&token, &uuid).await;
 
     if valid {
@@ -132,7 +132,7 @@ pub async fn verify(token: String, uuid: String) -> impl IntoResponse {
     }
 }
 
-pub async fn refresh(token: String, uuid: String) -> impl IntoResponse {
+pub async fn refresh(token: String, uuid: String) -> impl IntoApiResponse  {
     let mut app_state = APP_STATE.lock().await;
 
     if app_state.tokens.contains_key(&token) {

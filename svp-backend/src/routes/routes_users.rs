@@ -1,12 +1,13 @@
 use crate::auth::*;
-use axum::response::IntoResponse;
+use aide::axum::IntoApiResponse;
 use axum::extract::{Path, Json};
 use axum::http::{Response, StatusCode, HeaderMap};
 use crate::APP_STATE;
 use serde::Deserialize;
+use schemars::JsonSchema;
 
 /// Handles getting the info about a user
-pub async fn route_get_user(headers: HeaderMap, uuid: Path<String>) -> impl IntoResponse {
+pub async fn route_get_user(headers: HeaderMap, uuid: Path<String>) -> impl IntoApiResponse  {
     // Verify token
     if !verify_token_header(&headers, &uuid).await {
         return Response::builder()
@@ -32,7 +33,7 @@ pub async fn route_get_user(headers: HeaderMap, uuid: Path<String>) -> impl Into
     }
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, JsonSchema)]
 pub struct UserUpdate {
     email: Option<String>,
     password: Option<String>,
@@ -40,7 +41,7 @@ pub struct UserUpdate {
 }
 
 /// Handles updating the info about a user, currently only email and password
-pub async fn route_update_user(headers: HeaderMap, uuid: Path<String>, payload: Json<UserUpdate>) -> impl IntoResponse {
+pub async fn route_update_user(headers: HeaderMap, uuid: Path<String>, payload: Json<UserUpdate>) -> impl IntoApiResponse  {
     // Verify token
     if !verify_token_header(&headers, &uuid).await {
         return Response::builder()
@@ -79,7 +80,7 @@ pub async fn route_update_user(headers: HeaderMap, uuid: Path<String>, payload: 
 }
 
 /// Handles deleting a user
-pub async fn route_delete_user(headers: HeaderMap, uuid: Path<String>) -> impl IntoResponse {
+pub async fn route_delete_user(headers: HeaderMap, uuid: Path<String>) -> impl IntoApiResponse  {
     // Verify token
     if !verify_token_header(&headers, &uuid).await {
         return Response::builder()

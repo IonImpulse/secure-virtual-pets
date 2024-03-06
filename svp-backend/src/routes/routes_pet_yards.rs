@@ -1,12 +1,12 @@
 use crate::{auth::*, PetYard};
-use axum::response::IntoResponse;
+use aide::axum::IntoApiResponse;
 use axum::extract::{Path, Json};
 use axum::http::{Response, StatusCode, HeaderMap};
 use crate::APP_STATE;
 use serde::Deserialize;
+use schemars::JsonSchema;
 
-
-pub async fn route_get_pet_yard(headers: HeaderMap, user_uuid: Path<String>, pet_yard_uuid: Path<String>) -> impl IntoResponse {
+pub async fn route_get_pet_yard(headers: HeaderMap, user_uuid: Path<String>, pet_yard_uuid: Path<String>) -> impl IntoApiResponse  {
     // Verify token
     if !verify_token_header(&headers, &user_uuid).await {
         return Response::builder()
@@ -32,13 +32,13 @@ pub async fn route_get_pet_yard(headers: HeaderMap, user_uuid: Path<String>, pet
     }
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, JsonSchema)]
 pub struct PetYardUpdate {
     name: Option<String>,
     image: Option<u64>,
 }
 
-pub async fn route_update_pet_yard(headers: HeaderMap, user_uuid: Path<String>, pet_yard_uuid: Path<String>, payload: Json<PetYardUpdate>) -> impl IntoResponse {
+pub async fn route_update_pet_yard(headers: HeaderMap, user_uuid: Path<String>, pet_yard_uuid: Path<String>, payload: Json<PetYardUpdate>) -> impl IntoApiResponse  {
     // Verify token
     if !verify_token_header(&headers, &user_uuid).await {
         return Response::builder()
@@ -76,7 +76,7 @@ pub async fn route_update_pet_yard(headers: HeaderMap, user_uuid: Path<String>, 
         .unwrap();
 }
 
-pub async fn route_delete_pet_yard(headers: HeaderMap, user_uuid: Path<String>, pet_yard_uuid: Path<String>) -> impl IntoResponse {
+pub async fn route_delete_pet_yard(headers: HeaderMap, user_uuid: Path<String>, pet_yard_uuid: Path<String>) -> impl IntoApiResponse  {
     // Verify token
     if !verify_token_header(&headers, &user_uuid).await {
         return Response::builder()
@@ -106,7 +106,7 @@ pub async fn route_delete_pet_yard(headers: HeaderMap, user_uuid: Path<String>, 
         .unwrap();
 }
 
-pub async fn route_create_pet_yard(headers: HeaderMap, user_uuid: Path<String>, payload: Json<PetYardUpdate>) -> impl IntoResponse {
+pub async fn route_create_pet_yard(headers: HeaderMap, user_uuid: Path<String>, payload: Json<PetYardUpdate>) -> impl IntoApiResponse  {
     // Verify token
     if !verify_token_header(&headers, &user_uuid).await {
         return Response::builder()
@@ -127,7 +127,7 @@ pub async fn route_create_pet_yard(headers: HeaderMap, user_uuid: Path<String>, 
         .unwrap();
 }
 
-pub async fn route_add_member_to_pet_yard(headers: HeaderMap, user_uuid: Path<String>, pet_yard_uuid: Path<String>, member_uuid: Path<String>) -> impl IntoResponse {
+pub async fn route_add_member_to_pet_yard(headers: HeaderMap, user_uuid: Path<String>, pet_yard_uuid: Path<String>, member_uuid: Path<String>) -> impl IntoApiResponse  {
     // Verify token
     if !verify_token_header(&headers, &user_uuid).await {
         return Response::builder()
@@ -159,7 +159,7 @@ pub async fn route_add_member_to_pet_yard(headers: HeaderMap, user_uuid: Path<St
         .unwrap();
 }
 
-pub async fn route_remove_member_from_pet_yard(headers: HeaderMap, user_uuid: Path<String>, pet_yard_uuid: Path<String>, member_uuid: Path<String>) -> impl IntoResponse {
+pub async fn route_remove_member_from_pet_yard(headers: HeaderMap, user_uuid: Path<String>, pet_yard_uuid: Path<String>, member_uuid: Path<String>) -> impl IntoApiResponse  {
     // Verify token
     if !verify_token_header(&headers, &user_uuid).await {
         return Response::builder()
@@ -191,7 +191,7 @@ pub async fn route_remove_member_from_pet_yard(headers: HeaderMap, user_uuid: Pa
         .unwrap();
 }
 
-pub async fn route_add_pet_to_pet_yard(headers: HeaderMap, user_uuid: Path<String>, pet_yard_uuid: Path<String>, pet_uuid: Path<String>) -> impl IntoResponse {
+pub async fn route_add_pet_to_pet_yard(headers: HeaderMap, user_uuid: Path<String>, pet_yard_uuid: Path<String>, pet_uuid: Path<String>) -> impl IntoApiResponse  {
     // Verify token
     if !verify_token_header(&headers, &user_uuid).await {
         return Response::builder()
@@ -223,7 +223,7 @@ pub async fn route_add_pet_to_pet_yard(headers: HeaderMap, user_uuid: Path<Strin
         .unwrap();
 }
 
-pub async fn route_remove_pet_from_pet_yard(headers: HeaderMap, user_uuid: Path<String>, pet_yard_uuid: Path<String>, pet_uuid: Path<String>) -> impl IntoResponse {
+pub async fn route_remove_pet_from_pet_yard(headers: HeaderMap, user_uuid: Path<String>, pet_yard_uuid: Path<String>, pet_uuid: Path<String>) -> impl IntoApiResponse  {
     // Verify token
     if !verify_token_header(&headers, &user_uuid).await {
         return Response::builder()

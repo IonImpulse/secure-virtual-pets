@@ -1,10 +1,12 @@
-use axum::response::IntoResponse;
+use aide::axum::IntoApiResponse;
 use axum::extract::Path;
 use axum::http::{Response, StatusCode};
 use crate::APP_STATE;
+use schemars::JsonSchema;
 
 
-pub async fn route_get_public_user(uuid: Path<String>) -> impl IntoResponse {
+
+pub async fn route_get_public_user(uuid: Path<String>) -> impl IntoApiResponse  {
     let app_state = APP_STATE.lock().await;
 
     let user = app_state.get_user_by_uuid(&uuid);
@@ -22,7 +24,7 @@ pub async fn route_get_public_user(uuid: Path<String>) -> impl IntoResponse {
     }
 }
 
-pub async fn route_get_public_pet(pet_uuid: Path<String>) -> impl IntoResponse {
+pub async fn route_get_public_pet(pet_uuid: Path<String>) -> impl IntoApiResponse  {
     let app_state = APP_STATE.lock().await;
 
     let pet = app_state.get_pet_by_uuid(&pet_uuid);
@@ -40,7 +42,7 @@ pub async fn route_get_public_pet(pet_uuid: Path<String>) -> impl IntoResponse {
     }
 }
 
-pub async fn route_get_public_pet_yard(pet_yard_uuid: Path<String>) -> impl IntoResponse {
+pub async fn route_get_public_pet_yard(pet_yard_uuid: Path<String>) -> impl IntoApiResponse  {
     let app_state = APP_STATE.lock().await;
 
     let pet_yard = app_state.get_pet_yard_by_uuid(&pet_yard_uuid);
