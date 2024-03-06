@@ -40,10 +40,10 @@ pub async fn route_logout(token: Path<String>) -> impl IntoResponse {
 
 /// Handles the verification of a token.
 /// The user must provide their token.
-pub async fn route_verify(token: Path<String>) -> impl IntoResponse {
-    verify(token.to_string()).await
+pub async fn route_verify(uuid: Path<String>, token: Path<String>) -> impl IntoResponse {
+    verify(uuid.to_string(), token.to_string()).await
 }
 
-pub async fn route_refresh(token: Path<String>) -> impl IntoResponse {
-    refresh(token.to_string()).await
+pub async fn route_refresh(uuid: Path<String>, token: Path<String>) -> impl IntoResponse {
+    refresh(uuid.to_string(), token.to_string()).await
 }

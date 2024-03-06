@@ -1,12 +1,6 @@
+use axum::routing::{patch, get, post};
 use axum::{response::IntoResponse, Router};
-use axum::routing::{get, post, delete};
-use axum_server::tls_rustls;
-
 use axum_server::tls_rustls::RustlsConfig;
-use tower_http::{
-    compression::CompressionLayer, limit::RequestBodyLimitLayer, trace::TraceLayer,
-    validate_request::ValidateRequestHeaderLayer,
-};
 
 use once_cell::sync::Lazy;
 use std::net::SocketAddr;
@@ -25,7 +19,10 @@ use crate::structs::*;
 use crate::utils::*;
 
 use crate::routes::routes_auth::*;
+use crate::routes::routes_pets::*;
 use crate::routes::routes_users::*;
+use crate::routes::routes_pet_yards::*;
+use crate::routes::routes_public::*;
 
 // Create an arc mutex of AppState
 pub static APP_STATE: Lazy<Arc<Mutex<AppState>>> =
@@ -54,31 +51,53 @@ async fn main() {
         // Routes for authentication
         .route("/auth/login", post(route_login))
         .route("/auth/signup", post(route_signup))
-        .route("/auth/logout/:token", post(route_logout))
-        .route("/auth/refresh_token/:token", post(route_verify))
+        .route("/auth/logout/:uuid/:token", post(route_logout))
+        .route("/auth/refresh_token/:uuid/:token", post(route_refresh))
+        // Routes for users.
+        .route(
+            "/users/:uuid",
+            get(route_get_user)
+                .patch(route_update_user)
+                .delete(route_delete_user),
+        )
+        // Routes for pets.
+        .route(
+            "/users/:user_uuid/pets/:pet_uuid",
+            get(route_get_pet)
+                .patch(route_update_pet)
+                .delete(route_delete_pet)
+        )
+        .route(
+            "/users/:user_uuid/pets/new",
+            post(route_create_pet)
+        )
 
-        // Routes for users. These routes require a token
-        .route("/users/:uuid", get(route_get_user).delete(route_delete_user));
-        /*
-    
-        // Routes for pets. These routes require a token
-        .route("/pets/pet", get(route_get_pet))
-        .route("/pets/pet", post(route_update_pet))
-        .route("/pets/pet", delete(route_delete_pet))
+        // Routes for petyards
+        .route(
+            "/users/:user_uuid/pet_yards/:pet_yard_uuid",
+            get(route_get_pet_yard)
+                .patch(route_update_pet_yard)
+                .delete(route_delete_pet_yard)
+        )
+        .route(
+            "/users/:user_uuid/pet_yards/new",
+            post(route_create_pet_yard)
+        )
+        .route(
+            "/users/:user_uuid/pet_yards/:pet_yard_uuid/member/:member_uuid",
+            patch(route_add_member_to_pet_yard)
+            .delete(route_remove_member_from_pet_yard)
+        )
+        .route(
+            "/users/:user_uuid/pet_yards/:pet_yard_uuid/pet/:pet_uuid",
+            patch(route_add_pet_to_pet_yard)
+            .delete(route_remove_pet_from_pet_yard)
+        )
 
-        // Routes for pet yards. These routes require a token
-        .route("/pet_yards/pet_yard", get(route_get_pet_yard))
-        .route("/pet_yards/pet_yard", post(route_update_pet_yard))
-        .route("/pet_yards/pet_yard", delete(route_delete_pet_yard))
-
-        // Public routes, which return a 
-        .route("/public/user", get(route_get_public_user))
-        .route("/public/pet", get(route_get_public_pet))
-        .route("/public/pet_yard", get(route_get_public_pet_yard));
-         */
-        
-
-
+        // Public routes for users
+        .route("/public/user/:uuid", get(route_get_public_user))
+        .route("/public/pet/:uuid", get(route_get_public_pet))
+        .route("/public/pet_yard/:uuid", get(route_get_public_pet_yard));
 
     // If the paths are not found, create the pem files
     if !std::path::Path::new("cert.pem").exists() {
@@ -89,16 +108,13 @@ async fn main() {
         std::fs::write("key.pem", key).unwrap();
     }
 
-    let config: RustlsConfig = RustlsConfig::from_pem_file(
-        "cert.pem",
-        "key.pem",
-    ).await.unwrap();
+    let config: RustlsConfig = RustlsConfig::from_pem_file("cert.pem", "key.pem")
+        .await
+        .unwrap();
 
     // create app with bind_tls
-    axum_server::bind_rustls(
-            addr,
-            config,
-        ).serve(app.into_make_service())
+    axum_server::bind_rustls(addr, config)
+        .serve(app.into_make_service())
         .await
         .unwrap();
 }

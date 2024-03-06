@@ -15,20 +15,20 @@ use axum::Json;
 use serde::{Deserialize, Serialize};
 use axum::body::HttpBody;
 
-pub async fn verify_token(token: &str) -> bool {
+pub async fn verify_token(token: &str, uuid: &str) -> bool {
     let app_state = APP_STATE.lock().await;
 
     if app_state.tokens.contains_key(token) {
         let user_token = app_state.tokens.get(token).unwrap();
 
         // Check if token is valid
-        return user_token.is_valid();
+        return user_token.is_valid() && user_token.get_uuid() == uuid;
     } else {
         return false;
     }
 }
 
-pub async fn verify_token_header(headers: &http::HeaderMap) -> bool {
+pub async fn verify_token_header(headers: &http::HeaderMap, uuid: &str) -> bool {
     let token = headers.get("authorization");
 
     if token.is_none() {
@@ -37,7 +37,7 @@ pub async fn verify_token_header(headers: &http::HeaderMap) -> bool {
 
     let token = token.unwrap().to_str().unwrap().to_string();
 
-    verify_token(&token).await
+    verify_token(&token, uuid).await
 }
 
 /// Handles the login of a user.
@@ -116,8 +116,8 @@ pub async fn logout(token: String) -> impl IntoResponse {
         .unwrap()
 }
 
-pub async fn verify(token: String) -> impl IntoResponse {
-    let valid = verify_token(&token).await;
+pub async fn verify(token: String, uuid: String) -> impl IntoResponse {
+    let valid = verify_token(&token, &uuid).await;
 
     if valid {
         Response::builder()
@@ -132,7 +132,7 @@ pub async fn verify(token: String) -> impl IntoResponse {
     }
 }
 
-pub async fn refresh(token: String) -> impl IntoResponse {
+pub async fn refresh(token: String, uuid: String) -> impl IntoResponse {
     let mut app_state = APP_STATE.lock().await;
 
     if app_state.tokens.contains_key(&token) {

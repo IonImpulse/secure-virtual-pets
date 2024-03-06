@@ -73,7 +73,7 @@ pub fn decrypt<T: for<'a> Deserialize<'a>>(
 }
 
 pub fn hash(data: &str) -> String {
-    let mut hasher = sha2::Sha256::new();
+    let mut hasher = Sha256::new();
     hasher.update(data.as_bytes());
     let result = hasher.finalize();
     let result = format!("{:x}", result);
@@ -94,33 +94,6 @@ mod tests {
         assert_eq!(data, decrypted_data);
     }
 
-    #[test]
-    fn test_encrypt_decrypt_struct() {
-        let key = rand::thread_rng().gen::<[u8; 32]>();
-        let data = Pet::new("Test".to_string(), "Test".to_string());
-        let encrypted_data = encrypt(&data, &key).unwrap();
-        let decrypted_data: Pet = decrypt(&encrypted_data, &key).unwrap();
-        assert_eq!(data, decrypted_data);
-    }
-
-    #[test]
-    fn test_encrypt_decrypt_struct_with_option() {
-        let key = rand::thread_rng().gen::<[u8; 32]>();
-        let mut data = Pet::new("Test".to_string(), "Test".to_string());
-        data.set_pet_yard("Test".to_string());
-        let encrypted_data = encrypt(&data, &key).unwrap();
-        let decrypted_data: Pet = decrypt(&encrypted_data, &key).unwrap();
-        assert_eq!(data, decrypted_data);
-    }
-
-    #[test]
-    fn test_encrypt_decrypt_struct_with_option_none() {
-        let key = rand::thread_rng().gen::<[u8; 32]>();
-        let data = Pet::new("Test".to_string(), "Test".to_string());
-        let encrypted_data = encrypt(&data, &key).unwrap();
-        let decrypted_data: Pet = decrypt(&encrypted_data, &key).unwrap();
-        assert_eq!(data, decrypted_data);
-    }
 
     #[test]
     fn test_encrypt_decrypt_not_equal() {

@@ -3,11 +3,12 @@ use axum::response::IntoResponse;
 use axum::extract::{Path, Json};
 use axum::http::{Response, StatusCode, HeaderMap};
 use crate::APP_STATE;
+use serde::Deserialize;
 
 /// Handles getting the info about a user
 pub async fn route_get_user(headers: HeaderMap, uuid: Path<String>) -> impl IntoResponse {
     // Verify token
-    if !verify_token_header(&headers).await {
+    if !verify_token_header(&headers, &uuid).await {
         return Response::builder()
             .status(StatusCode::UNAUTHORIZED)
             .body("Unauthorized".to_string()) // Convert to String
@@ -31,16 +32,17 @@ pub async fn route_get_user(headers: HeaderMap, uuid: Path<String>) -> impl Into
     }
 }
 
-struct UserUpdate {
+#[derive(Deserialize)]
+pub struct UserUpdate {
     email: Option<String>,
     password: Option<String>,
 
 }
 
 /// Handles updating the info about a user, currently only email and password
-pub async fn route_update_user(headers: HeaderMap, Path(uuid): Path<String>, Json(payload): Json<UserUpdate>) -> impl IntoResponse {
+pub async fn route_update_user(headers: HeaderMap, uuid: Path<String>, payload: Json<UserUpdate>) -> impl IntoResponse {
     // Verify token
-    if !verify_token_header(&headers).await {
+    if !verify_token_header(&headers, &uuid).await {
         return Response::builder()
             .status(StatusCode::UNAUTHORIZED)
             .body("Unauthorized".to_string()) // Convert to String
@@ -79,7 +81,7 @@ pub async fn route_update_user(headers: HeaderMap, Path(uuid): Path<String>, Jso
 /// Handles deleting a user
 pub async fn route_delete_user(headers: HeaderMap, uuid: Path<String>) -> impl IntoResponse {
     // Verify token
-    if !verify_token_header(&headers).await {
+    if !verify_token_header(&headers, &uuid).await {
         return Response::builder()
             .status(StatusCode::UNAUTHORIZED)
             .body("Unauthorized".to_string()) // Convert to String

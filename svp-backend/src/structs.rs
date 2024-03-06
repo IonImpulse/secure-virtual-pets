@@ -1,6 +1,4 @@
-use axum::http::header::Keys;
-use serde::{Deserialize, Serialize};
-use std::{collections::HashMap, net::SocketAddr};
+use std::collections::HashMap;
 use uuid::Uuid;
 use chrono;
 
@@ -27,6 +25,19 @@ impl AppState {
         }
     }
 
+    pub fn create_token(&mut self, user: &User) -> String {
+        let token = UserToken::new(user.uuid.clone(), Uuid::new_v4().to_string());
+        self.tokens.insert(token.token.clone(), token.clone());
+
+        token.token
+    }
+
+    /*
+    
+    User functions
+
+     */
+
     pub fn get_user_by_uuid(&self, uuid: &str) -> Option<&User> {
         self.users.get(uuid)
     }
@@ -40,19 +51,49 @@ impl AppState {
         None
     }
 
-    pub fn create_token(&mut self, user: &User) -> String {
-        let token = UserToken::new(user.uuid.clone(), Uuid::new_v4().to_string());
-        self.tokens.insert(token.token.clone(), token.clone());
-
-        token.token
-    }
-
     pub fn update_user(&mut self, user: User) {
         self.users.insert(user.uuid.clone(), user);
     }
 
     pub fn delete_user(&mut self, user: User) {
         self.users.remove(&user.uuid);
+    }
+
+    /*
+    
+    Pet functions
+    
+     */
+
+    pub fn get_pet_by_uuid(&self, uuid: &str) -> Option<&Pet> {
+        self.pets.get(uuid)
+    }
+
+    pub fn update_pet(&mut self, pet: Pet) {
+        self.pets.insert(pet.uuid.clone(), pet);
+    }
+
+    pub fn delete_pet(&mut self, pet: Pet) {
+        self.pets.remove(&pet.uuid);
+    }
+
+
+    /*
+    
+    Pet yard functions
+    
+     */
+
+    pub fn get_pet_yard_by_uuid(&self, uuid: &str) -> Option<&PetYard> {
+        self.pet_yards.get(uuid)
+    }
+
+    pub fn update_pet_yard(&mut self, pet_yard: PetYard) {
+        self.pet_yards.insert(pet_yard.uuid.clone(), pet_yard);
+    }
+
+    pub fn delete_pet_yard(&mut self, pet_yard: PetYard) {
+        self.pet_yards.remove(&pet_yard.uuid);
     }
 }
 
@@ -218,15 +259,15 @@ pub struct Pet {
 }
 
 impl Pet {
-    pub fn new(name: String, species: String) -> Self {
+    pub fn new(name: String, species: String, image: u64, pet_yard: Option<String>) -> Self {
         Self {
             uuid: Uuid::new_v4().to_string(),
             name,
-            image: 0,
+            image,
             species,
             level: 1,
             experience: 0,
-            pet_yard: None,
+            pet_yard,
         }
     }
 
@@ -273,6 +314,26 @@ impl Pet {
             self.experience = 0;
         }
     }
+
+    pub fn get_image(&self) -> u64 {
+        self.image
+    }
+
+    pub fn set_image(&mut self, image: u64) {
+        self.image = image;
+    }
+
+    pub fn for_public(&self) -> String {
+        serde_json::json!({
+            "uuid": self.uuid,
+            "name": self.name,
+            "image": self.image,
+            "species": self.species,
+            "level": self.level,
+            "experience": self.experience,
+            "in_pet_yard": self.pet_yard.is_some(),
+        }).to_string()
+    }
 }
 
 
@@ -280,6 +341,7 @@ impl Pet {
 pub struct PetYard {
     uuid: String,
     name: String,
+    image: u64,
     // UUID of the user who owns the pet yard
     owner: String,
     // UUIDs of the users who have joined the pet yard
@@ -289,14 +351,31 @@ pub struct PetYard {
 }
 
 impl PetYard {
-    pub fn new(name: String, owner_uuid: String) -> Self {
+    pub fn new(name: String, owner_uuid: String, image: u64) -> Self {
         Self {
             uuid: Uuid::new_v4().to_string(),
             name,
+            image,
             owner: owner_uuid,
             members: vec![],
             pets: vec![],
         }
+    }
+
+    pub fn set_name(&mut self, name: String) {
+        self.name = name;
+    }
+
+    pub fn get_name(&self) -> String {
+        self.name.clone()
+    }
+
+    pub fn set_image(&mut self, image: u64) {
+        self.image = image;
+    }
+
+    pub fn get_image(&self) -> u64 {
+        self.image
     }
 
     pub fn add_member(&mut self, member_uuid: String) {
@@ -332,5 +411,16 @@ impl PetYard {
 
     pub fn get_owner(&self) -> String {
         self.owner.clone()
+    }
+
+    pub fn for_public(&self) -> String {
+        serde_json::json!({
+            "uuid": self.uuid,
+            "name": self.name,
+            "image": self.image,
+            "owner": self.owner,
+            "num_members": self.members.len(),
+            "num_pets": self.pets.len(),
+        }).to_string()
     }
 }
