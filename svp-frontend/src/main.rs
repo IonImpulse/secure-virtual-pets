@@ -12,9 +12,10 @@ use tui_prompts::prelude::*;
 
 mod tui;
 mod login;
+mod signup;
 
 //Screen holds the current focused Screen (for determining what keyevents do what)
-#[derive(Debug, Default)]
+#[derive(Debug, Default, PartialEq)]
 pub enum Screen {
     #[default]
     Login,
@@ -28,6 +29,7 @@ pub enum Field {
     Server,
     Username,
     Password,
+    Email,
 }
 
 //App holds all fields + some other stuff
@@ -35,9 +37,10 @@ pub enum Field {
 pub struct App<'a> {
     exit: bool,
     current_screen: Screen, 
-
     current_field:   Field,
+
     server_state: TextState<'a>,
+    email_state: TextState<'a>,
     username_state:  TextState<'a>,
     password_state:  TextState<'a>,
 }
@@ -49,7 +52,7 @@ impl <'a>App<'a> {
     
     //main drawing loop
     pub fn run(&mut self, terminal: &mut tui::Tui) -> io::Result<()> {
-        *self.current_state().focus_state_mut() = FocusState::Focused;
+        *self.current_login_state().focus_state_mut() = FocusState::Focused;
         while !self.exit {
             terminal.draw(|frame| self.draw_ui(frame))?;
             self.handle_events()?;
@@ -74,16 +77,23 @@ impl <'a>App<'a> {
     fn handle_key_event(&mut self, key_event: KeyEvent) {
 
         match (key_event.code, key_event.modifiers, &self.current_screen) {
+            
+            //swtich screens
+            (event::KeyCode::Char('s'), KeyModifiers::CONTROL, _) => self.switch_screen(),
 
+            //login screen stuff
             (event::KeyCode::Char('c'), KeyModifiers::CONTROL, _ )=> self.exit(),
             (event::KeyCode::Enter, _, Screen::Login ) => self.submit(),
             (event::KeyCode::Tab, KeyModifiers::NONE, Screen::Login ) => self.focus_next_login_prompt(),
             (event::KeyCode::BackTab, KeyModifiers::SHIFT, Screen::Login) => self.focus_prev_login_prompt(),
-            (event::KeyCode::Char('s'), KeyModifiers::CONTROL, Screen::Login) => self.switch_screen(),
+            (_,_,Screen::Login) => self.focus_handle_event(key_event),
+            
+            //Signup screen stuff
+            (event::KeyCode::Tab, KeyModifiers::NONE, Screen::Signup ) => self.focus_next_signup_prompt(),
+            (event::KeyCode::BackTab, KeyModifiers::SHIFT, Screen::Signup) => self.focus_prev_signup_prompt(),
+            (event::KeyCode::Enter, _, Screen::Signup ) => self.signup_submit(),
+            (_,_,Screen::Signup) => self.focus_signup_handle_event(key_event),
 
-            //(event::KeyCode::Char('s'), KeyModifiers::CONTROL, Screen::Login) => self.switch_screen(),
-
-            _ => self.focus_handle_event(key_event),
         }
     }
     
@@ -96,7 +106,7 @@ impl <'a>App<'a> {
         
         //define block and titles
         let title = Title::from(" Secure Virtual Pets ".bold());
-        let quit_instruction = Title::from(" Ctrl C to quit ");
+        let quit_instruction = Title::from(" Ctrl C to quit - Ctrl S to Switch Screens ");
         let block = Block::default()
             .title(title.alignment(Alignment::Center))
             .title(quit_instruction.alignment(Alignment::Center).position(Position::Bottom))
@@ -104,12 +114,15 @@ impl <'a>App<'a> {
             .border_set(border::THICK);
 
         //draw the block
-        frame.render_widget(block, frame.size());
+        frame.render_widget(block, frame.size()); 
 
-        self.draw_login_screen(frame);
+        if self.current_screen == Screen::Login{
+            self.draw_login_screen(frame);
+        } else {
+        self.draw_signup_screen(frame);
+        }
 
     }
-
 
     //kill the program on cntrl c 
     fn exit(&mut self) {

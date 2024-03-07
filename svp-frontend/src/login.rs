@@ -19,9 +19,13 @@ impl <'a> App <'a> {
         let (username_area, password_area, server_area, value_area, _debug_area) = self.arrange_login(frame.size());
         //and draw eact of the prompts
         self.draw_username_prompt(frame, username_area);
+
+        //TODO: Some of these are defined in the login implementaition, maybe should separate that
+        //better
         self.draw_password_prompt(frame, password_area);
         self.draw_server_prompt(frame, server_area);
         self.draw_state_value(frame, value_area);
+        //self.draw_debug(frame, _debug_area);
 
     }
 
@@ -31,14 +35,15 @@ impl <'a> App <'a> {
         let username_area  = Rect::new(88, 21, area.width, 1);
         let password_area = Rect::new(88, 22, area.width, 1);
         let value_area     = Rect::new(88, 23, area.width, 1);
-        let debug_area     = Rect::new(88, 24, area.width, 1);
+        let debug_area     = Rect::new(88, 24, area.width, 20);
 
         (username_area, password_area, server_area, value_area, debug_area)
     }
 
     //matching the current state to the app state
-    pub fn current_state(&mut self) -> &mut TextState<'a> {
+    pub fn current_login_state(&mut self) -> &mut TextState<'a> {
         match self.current_field {
+            Field::Email => &mut self.server_state, //should never be hit
             Field::Server => &mut self.server_state,
             Field::Username => &mut self.username_state,
             Field::Password => &mut self.password_state,
@@ -47,7 +52,7 @@ impl <'a> App <'a> {
     
     // draw the value of the current state underneath the prompts for debugging purposes
     pub fn draw_state_value(&mut self, frame: &mut Frame, value_area: Rect) {
-        let state = self.current_state();
+        let state = self.current_login_state();
         let state = format!("  Value: {}", state.value());
         frame.render_widget(
             Paragraph::new(state).style(Style::new().dark_gray()),
@@ -86,36 +91,37 @@ impl <'a> App <'a> {
         TextPrompt::from("Server").draw(frame, server_area, &mut self.server_state);
     }
 
-
     //focusing between states
     pub fn focus_handle_event(&mut self, key_event: KeyEvent) {
-        let state = self.current_state();
+        let state = self.current_login_state();
         state.handle_key_event(key_event);
     }
 
     pub fn focus_next_login_prompt(&mut self) {
-        self.current_state().blur();
+        self.current_login_state().blur();
         self.current_field = self.next_field();
-        self.current_state().focus();
+        self.current_login_state().focus();
     }
 
     pub fn focus_prev_login_prompt(&mut self) {
-        self.current_state().blur();
+        self.current_login_state().blur();
         self.current_field = self.prev_field();
-        self.current_state().focus();
+        self.current_login_state().focus();
     }
     
     //swtiching between states
-    pub fn next_field(&mut self) -> Field {
+    fn next_field(&mut self) -> Field {
         match self.current_field {
+            Field::Email => Field::Server, //this should never be hit
             Field::Username => Field::Password,
             Field::Password => Field::Server,
             Field::Server => Field::Username,
         }
     }
 
-    pub fn prev_field(&mut self) -> Field {
+    fn prev_field(&mut self) -> Field {
         match self.current_field {
+            Field::Email => Field::Server, //this should never be hit
             Field::Username => Field::Server,
             Field::Password => Field::Username,
             Field::Server => Field::Password,
@@ -124,11 +130,11 @@ impl <'a> App <'a> {
     
     //submitting a string to a state
     pub fn submit(&mut self) {
-        self.current_state().complete();
-        if self.current_state().is_finished() && !self.is_finished() {
-            self.current_state().blur();
+        self.current_login_state().complete();
+        if self.current_login_state().is_finished() && !self.is_finished() {
+            self.current_login_state().blur();
             self.current_field = self.next_field();
-            self.current_state().focus();
+            self.current_login_state().focus();
         }
     }
 
