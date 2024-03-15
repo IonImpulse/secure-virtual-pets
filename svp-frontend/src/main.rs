@@ -1,5 +1,7 @@
 use std::io;
 
+//TODO: "Unfinish" states when moving beteween screens
+
 use crossterm::event::{self, Event, KeyEvent, KeyModifiers, /*KeyCode,*/ KeyEventKind};
 
 use ratatui::{
@@ -10,9 +12,11 @@ use ratatui::{
 
 use tui_prompts::prelude::*;
 
+mod gen_funcs;
 mod tui;
 mod login;
 mod signup;
+
 
 //Screen holds the current focused Screen (for determining what keyevents do what)
 #[derive(Debug, Default, PartialEq)]
@@ -52,7 +56,7 @@ impl <'a>App<'a> {
     
     //main drawing loop
     pub fn run(&mut self, terminal: &mut tui::Tui) -> io::Result<()> {
-        *self.current_login_state().focus_state_mut() = FocusState::Focused;
+        *self.current_state().focus_state_mut() = FocusState::Focused;
         while !self.exit {
             terminal.draw(|frame| self.draw_ui(frame))?;
             self.handle_events()?;
@@ -80,17 +84,18 @@ impl <'a>App<'a> {
             
             //swtich screens
             (event::KeyCode::Char('s'), KeyModifiers::CONTROL, _) => self.switch_screen(),
+            
+            //focus between prompts (determined conditionally based on what screen is focused) 
+            (event::KeyCode::Tab, KeyModifiers::NONE, _ ) => self.focus_next_prompt(),
+            (event::KeyCode::BackTab, KeyModifiers::SHIFT, _) => self.focus_prev_prompt(),
 
             //login screen stuff
             (event::KeyCode::Char('c'), KeyModifiers::CONTROL, _ )=> self.exit(),
             (event::KeyCode::Enter, _, Screen::Login ) => self.submit(),
-            (event::KeyCode::Tab, KeyModifiers::NONE, Screen::Login ) => self.focus_next_login_prompt(),
-            (event::KeyCode::BackTab, KeyModifiers::SHIFT, Screen::Login) => self.focus_prev_login_prompt(),
+
             (_,_,Screen::Login) => self.focus_handle_event(key_event),
             
             //Signup screen stuff
-            (event::KeyCode::Tab, KeyModifiers::NONE, Screen::Signup ) => self.focus_next_signup_prompt(),
-            (event::KeyCode::BackTab, KeyModifiers::SHIFT, Screen::Signup) => self.focus_prev_signup_prompt(),
             (event::KeyCode::Enter, _, Screen::Signup ) => self.signup_submit(),
             (_,_,Screen::Signup) => self.focus_signup_handle_event(key_event),
 
