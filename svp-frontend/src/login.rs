@@ -1,11 +1,7 @@
 use crate::App;
-use crate::Field;
 
-use crossterm::event::KeyEvent;
 
 use ratatui::prelude::*;
-
-use tui_prompts::prelude::*;
 
 //implementation for the Login screen for App
 impl <'a> App <'a> {
@@ -31,48 +27,5 @@ impl <'a> App <'a> {
         let debug_area     = Rect::new(88, 24, area.width, 20);
 
         (username_area, password_area, server_area, value_area, debug_area)
-    }
-    
-    //swtiching between states
-    //I could differnetiate this by screen like on the prompts, but would that really be clearer?
-    pub fn next_login_field(&mut self) -> Field {
-        match self.current_field {
-            Field::Email => Field::Server, //this should never be hit
-            Field::Username => Field::Password,
-            Field::Password => Field::Server,
-            Field::Server => Field::Username,
-        }
-    }
-
-    pub fn prev_login_field(&mut self) -> Field {
-        match self.current_field {
-            Field::Email => Field::Server, //this should never be hit
-            Field::Username => Field::Server,
-            Field::Password => Field::Username,
-            Field::Server => Field::Password,
-        }
-    }
-    
-    //focusing between states
-    pub fn focus_handle_event(&mut self, key_event: KeyEvent) {
-        let state = self.current_state();
-        state.handle_key_event(key_event);
-    }
-    
-    //submitting a string to a state
-    pub fn submit(&mut self) {
-        self.current_state().complete();
-        if self.current_state().is_finished() && !self.is_finished() {
-            self.current_state().blur();
-            self.current_field = self.next_login_field();
-            self.current_state().focus();
-        }
-    }
-
-    //when all states have been finished
-    pub fn is_finished(&self) -> bool {
-        self.username_state.is_finished()
-            && self.password_state.is_finished()
-            && self.server_state.is_finished()
     }
 }

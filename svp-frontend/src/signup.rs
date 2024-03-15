@@ -1,11 +1,6 @@
 use crate::App;
-use crate::Field;
-
-use crossterm::event::KeyEvent;
 
 use ratatui:: prelude::*;
-
-use tui_prompts::prelude::*;
 
 //This is the implementation for the signup screen
 impl <'a> App <'a> {
@@ -32,38 +27,4 @@ impl <'a> App <'a> {
 
         ( server_area, email_area, username_area, password_area, value_area)
     }
-
-    //swtiching between states
-    pub fn next_signup_field(&mut self) -> Field {
-        match self.current_field {
-            Field::Email => Field::Username,
-            Field::Server => Field::Email,
-            Field::Username => Field::Password,
-            Field::Password => Field::Server,
-        }
-    }
-
-    pub fn prev_signup_field(&mut self) -> Field {
-        match self.current_field {
-            Field::Email => Field::Server, //this should never be hit
-            Field::Server => Field::Password,
-            Field::Username => Field::Email,
-            Field::Password => Field::Username,
-        }
-    }
-
-    pub fn signup_submit(&mut self) {
-        self.current_state().complete();
-        if self.current_state().is_finished() && !self.is_finished() {
-            self.current_state().blur();
-            self.current_field = self.next_signup_field();
-            self.current_state().focus();
-        }
-    }
-
-    pub fn focus_signup_handle_event(&mut self, key_event: KeyEvent) {
-        let state = self.current_state();
-        state.handle_key_event(key_event);
-    }
-
 }

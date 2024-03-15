@@ -1,6 +1,7 @@
 use std::io;
 
-//TODO: "Unfinish" states when moving beteween screens
+//TODO: "Unfinish" states when moving beteween screens. Need to read up on tui_prompts to implement
+//that
 
 use crossterm::event::{self, Event, KeyEvent, KeyModifiers, /*KeyCode,*/ KeyEventKind};
 
@@ -84,20 +85,19 @@ impl <'a>App<'a> {
             
             //swtich screens
             (event::KeyCode::Char('s'), KeyModifiers::CONTROL, _) => self.switch_screen(),
+
+            //submit to a field 
+            (event::KeyCode::Enter, _, _ ) => self.submit(),
             
             //focus between prompts (determined conditionally based on what screen is focused) 
             (event::KeyCode::Tab, KeyModifiers::NONE, _ ) => self.focus_next_prompt(),
             (event::KeyCode::BackTab, KeyModifiers::SHIFT, _) => self.focus_prev_prompt(),
 
-            //login screen stuff
+            //kill the frontend
             (event::KeyCode::Char('c'), KeyModifiers::CONTROL, _ )=> self.exit(),
-            (event::KeyCode::Enter, _, Screen::Login ) => self.submit(),
 
-            (_,_,Screen::Login) => self.focus_handle_event(key_event),
+            (_,_,_) => self.focus_handle_event(key_event),
             
-            //Signup screen stuff
-            (event::KeyCode::Enter, _, Screen::Signup ) => self.signup_submit(),
-            (_,_,Screen::Signup) => self.focus_signup_handle_event(key_event),
 
         }
     }
@@ -107,7 +107,7 @@ impl <'a>App<'a> {
     fn draw_ui(&mut self, frame: &mut Frame) {
 
         //I'm thinking for the moment, the framing block will be a constant in the TUI, so I'll
-        //included it in the base draw function. 
+        //include it in the base draw function. 
         
         //define block and titles
         let title = Title::from(" Secure Virtual Pets ".bold());
@@ -133,23 +133,19 @@ impl <'a>App<'a> {
     fn exit(&mut self) {
         self.exit = true;
     }
-
+    
+    //switches the screen
     fn switch_screen(&mut self) {
-        self.current_screen = self.match_screen();
-    }
-
-    fn match_screen(&mut self) -> Screen {
-        match self.current_screen {
+        self.current_screen = match self.current_screen {
             Screen::Login => Screen::Signup,
             Screen::Signup => Screen::Login,
-        }
+        };
     }
 }
 
 
 //main function
 fn main() -> io::Result<()> {
-
     let mut terminal = tui::init()?;
     let app_result = App::default().run(&mut terminal);
     tui::restore()?;
