@@ -20,7 +20,7 @@ impl <'a> App <'a> {
 
     //arrange the areas of the text prompts
     fn arrange_login(&self, area: Rect) -> (Rect, Rect, Rect, Rect, Rect) {
-        let server_area  = Rect::new(88, 20, area.width, 1);
+        let server_area  = self.centered_rect(Rect::new(88, 20, area.width, 1), 50, 50);
         let username_area  = Rect::new(88, 21, area.width, 1);
         let password_area = Rect::new(88, 22, area.width, 1);
         let value_area     = Rect::new(88, 23, area.width, 1);
