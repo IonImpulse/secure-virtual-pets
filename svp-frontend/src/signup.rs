@@ -19,11 +19,11 @@ impl <'a> App <'a> {
     }
 
     fn arrange_signup(&self, area: Rect) -> (Rect, Rect, Rect, Rect, Rect) {
-        let server_area  = Rect::new(88, 20, area.width, 1);
-        let email_area     = Rect::new(88, 21, area.width, 1);
-        let username_area  = Rect::new(88, 22, area.width, 1);
-        let password_area = Rect::new(88, 23, area.width, 1);
-        let value_area     = Rect::new(88, 24, area.width, 1);
+        let server_area  = self.dynamic_rect(area, 4, 10, 16, 2);
+        let email_area     = self.dynamic_rect(area, 4, 11, 16, 2);
+        let username_area  = self.dynamic_rect(area, 4, 12, 16, 2);
+        let password_area = self.dynamic_rect(area, 4, 13, 16, 2);
+        let value_area     = self.dynamic_rect(area, 4, 14, 16, 2);
 
         ( server_area, email_area, username_area, password_area, value_area)
     }
