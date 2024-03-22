@@ -44,10 +44,13 @@ pub struct App<'a> {
     current_screen: Screen, 
     current_field:   Field,
 
+    table_state: TableState,
+
     server_state: TextState<'a>,
     email_state: TextState<'a>,
     username_state:  TextState<'a>,
     password_state:  TextState<'a>,
+
 }
 
 //main implementation block of App

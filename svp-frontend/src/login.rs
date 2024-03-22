@@ -2,6 +2,9 @@ use crate::App;
 
 use ratatui::prelude::*;
 
+//use crate::Borders;
+//use crate::Block;
+
 //implementation for the Login screen for App
 impl <'a> App <'a> {
     pub fn draw_login_screen(&mut self, frame: &mut Frame) {
@@ -9,7 +12,7 @@ impl <'a> App <'a> {
         let (username_area, password_area, server_area, value_area, _debug_area) = self.arrange_login(frame.size());
 
         //and draw eact of the prompts
-        //frame.render_widget(Block::default().borders(Borders::all()).title("Main"), self.dynamic_rect(frame.size(), 4, 20, 16, 1));
+        //frame.render_widget(Block::default().borders(Borders::all()).title("Main"), self.dynamic_rect(frame.size(), 4, 5, 16, 10));
         self.draw_username_prompt(frame, username_area);
         self.draw_password_prompt(frame, password_area);
         self.draw_server_prompt(frame, server_area);
