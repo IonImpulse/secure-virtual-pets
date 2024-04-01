@@ -31,3 +31,4 @@ once_cell = "1.19.0"
 rcgen = "0.12"
 aide = { version = "0.13.0", features = ["redoc", "axum", "axum-extra", "macros"] }
 schemars = { version = "0.8" }
+headers = "0.4"

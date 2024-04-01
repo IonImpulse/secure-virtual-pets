@@ -1,5 +1,5 @@
 use aide::redoc::Redoc;
-use axum::{Extension, Json};
+use axum::{http, Extension, Json};
 use axum_server::tls_rustls::RustlsConfig;
 
 use aide::{
@@ -12,11 +12,11 @@ use aide::{
 };
 
 use once_cell::sync::Lazy;
-use std::net::SocketAddr;
+use std::{net::SocketAddr, time::Duration};
 use std::sync::Arc;
 use tokio::sync::Mutex;
 use tower_http::trace::{self, TraceLayer};
-use tracing::Level;
+use tracing::{Level, Span};
 
 mod auth;
 mod encryption;
@@ -66,9 +66,13 @@ async fn main() {
     println!("Listening on {}", addr);
 
     tracing_subscriber::fmt()
-        .with_target(true)
+        .with_target(false)
         .compact()
         .init();
+
+    let trace_layer = TraceLayer::new_for_http()
+        .make_span_with(CustomMakeSpan)
+        .on_response(CustomOnResponse);
 
     let app = ApiRouter::new()
         .route("/", get(index))
@@ -118,9 +122,7 @@ async fn main() {
         .api_route("/public/pet_yard/:uuid", get(route_get_public_pet_yard))
         .route("/api.json", get(route_api_json))
         .layer(
-            TraceLayer::new_for_http()
-                .make_span_with(trace::DefaultMakeSpan::new().level(Level::INFO))
-                .on_response(trace::DefaultOnResponse::new().level(Level::INFO)),
+            trace_layer
         );
 
     // If the paths are not found, create the pem files
@@ -145,6 +147,53 @@ async fn main() {
         )
         .await
         .unwrap();
+}
+
+#[derive(Debug, Clone)]
+struct CustomMakeSpan;
+
+impl<B> trace::MakeSpan<B> for CustomMakeSpan {
+    fn make_span(&mut self, request: &http::Request<B>) -> Span {
+        let remote_addr = request
+            .extensions()
+            .get::<SocketAddr>()
+            .map(SocketAddr::to_string)
+            .unwrap_or_else(|| "-".to_string());
+
+        tracing::info_span!(
+            "request",
+            http.method = %request.method(),
+            http.uri = %request.uri(),
+            http.remote_addr = %remote_addr,
+            otel.kind = "server",
+        )
+    }
+}
+
+#[derive(Debug, Clone)]
+struct CustomOnResponse;
+
+impl<B> trace::OnResponse<B> for CustomOnResponse {
+    fn on_response(self, response: &http::Response<B>, latency: Duration, span: &Span) {
+        let status = response.status();
+        let length = response
+            .headers()
+            .get(http::header::CONTENT_LENGTH)
+            .and_then(|val| val.to_str().ok())
+            .unwrap_or("-");
+
+        span.record("http.status_code", &tracing::field::display(status.as_u16()));
+        span.record("http.response_content_length", &length);
+
+        let latency_secs = latency.as_secs_f32();
+
+        tracing::info!(
+            status = %status.as_u16(),
+            length = %length,
+            latency_secs = format!("{:.3}s", latency_secs),
+            "request processed",
+        );
+    }
 }
 
 async fn route_api_json(Extension(api): Extension<OpenApi>) -> impl IntoApiResponse {
