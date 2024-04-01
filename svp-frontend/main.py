@@ -65,7 +65,7 @@ def signup():
     signup_payload = json.dumps(signup_payload)
     
     print(server + 'auth/signup')
-    response = requests.post(server + '/auth/signup', verify=VERIFY_CERT, data=signup_payload)
+    response = requests.post(server + 'auth/signup', verify=VERIFY_CERT, data=signup_payload)
 
     print(response)
 
