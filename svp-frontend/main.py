@@ -58,10 +58,8 @@ def login():
     username = input("Username: ");
     password = maskpass.askpass(prompt="Password: ")
 
-    login_payload = {"password": password, "username": username } 
-    login_payload = json.dumps(login_payload)
-    # gonna have to fix this in a real networking-orinented way
-    response = requests.post(server + 'auth/login', verify=VERIFY_CERT, data=login_payload)
+    login_payload = {"password": password, "username": username} 
+    response = requests.post(server + 'auth/login', verify=VERIFY_CERT, json=login_payload)
     print(response)
     pass
 
@@ -82,9 +80,7 @@ def signup():
     password = maskpass.askpass(prompt="Password: ")
 
     signup_payload = { "email": email, "password": password, "username": username }
-    
     response = requests.post(server + 'auth/signup', verify=VERIFY_CERT, json=signup_payload)
-
     print(response)
 
 def header():
