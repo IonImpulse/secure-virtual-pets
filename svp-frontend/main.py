@@ -9,7 +9,18 @@ import maskpass
 
 path = os.path.dirname(os.path.abspath(__file__))
 
-default_port = 3000
+DEFAULT_PORT = 3000
+
+DEFAULT_SERVER = f"https://localhost:{DEFAULT_PORT}/"
+
+VERIFY_CERT = path + "/../svp-backend/cert.pem"
+
+class App:
+    def __init__(self, server):
+        self.server = server
+
+    def run(self):
+        menu()
 
 def menu():
 
@@ -35,19 +46,17 @@ def menu():
             print("I'm sorry, I didn't recognize that command.")
 
 def login():
-    server = input("Server: ");
     username = input("Username: ");
     password = maskpass.askpass(prompt="Password: ")
 
     login_payload = {"password": password, "username": username } 
     login_payload = json.dumps(login_payload)
     # gonna have to fix this in a real networking-orinented way
-    print(requests.get(server, verify='/home/cole/Documents/School/CS/181S/secure-virtual-pets/svp-backend/cert.pem'))
+    print(requests.get(server, verify=VERIFY_CERT))
     pass
 
 
 def signup():
-    server = input("Server: ")
     email = input("Your Email: ");
     username = input("Username: ");
     password = maskpass.askpass(prompt="Password: ")
@@ -55,12 +64,11 @@ def signup():
     signup_payload = { "email": email ,   "password": password, "username": username } 
     signup_payload = json.dumps(signup_payload)
 
-    response = requests.post(server, verify='/home/cole/Documents/School/CS/181S/secure-virtual-pets/svp-backend/cert.pem', data=signup_payload)
+    response = requests.post(server, verify=VERIFY_CERT, data=signup_payload)
 
     print(response)
 
 def header():
-
     print(r"""
  $$$$$$\  $$\    $$\ $$$$$$$\  
 $$  __$$\ $$ |   $$ |$$  __$$\ 
@@ -82,10 +90,9 @@ def command_list():
     """)
 
 if __name__ == "__main__": 
-
-    # Command-line parsing
-    #   Require user to specify filename, columns, and k on the command-line.
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(description="Secure Virtual Pets")
+    parser.add_argument("--server", default=DEFAULT_SERVER, help="Server URL")
     args = parser.parse_args()
-    signup()
-
+    server = args.server
+    app = App(server)
+    app.run()

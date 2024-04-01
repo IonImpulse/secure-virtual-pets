@@ -15,6 +15,8 @@ use once_cell::sync::Lazy;
 use std::net::SocketAddr;
 use std::sync::Arc;
 use tokio::sync::Mutex;
+use tower_http::trace::{self, TraceLayer};  
+use tracing::Level;
 
 mod auth;
 mod encryption;
@@ -118,7 +120,13 @@ async fn main() {
         .api_route("/public/pet/:uuid", get(route_get_public_pet))
         .api_route("/public/pet_yard/:uuid", get(route_get_public_pet_yard))
 
-        .route("/api.json", get(route_api_json));
+        .route("/api.json", get(route_api_json))
+        .layer(
+            TraceLayer::new_for_http()
+                .make_span_with(trace::DefaultMakeSpan::new()
+                    .level(Level::INFO))
+                .on_response(trace::DefaultOnResponse::new()
+                    .level(Level::INFO)));
 
     // If the paths are not found, create the pem files
     if !std::path::Path::new("cert.pem").exists() {
