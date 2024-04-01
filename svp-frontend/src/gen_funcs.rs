@@ -12,7 +12,7 @@ use ratatui::{
 use tui_prompts::prelude::*;
 
 
-//This implementation contains 
+//This implementation contains general functions used across the front-end application.
 impl <'a> App <'a> {
 
     // ================================= Drawing the prompts =================================
@@ -28,43 +28,6 @@ impl <'a> App <'a> {
 
     pub fn draw_server_prompt(&mut self, frame: &mut Frame, server_area: Rect) {
         TextPrompt::from("Server").draw(frame, server_area, &mut self.server_state);
-    }
-
-
-
-
-    pub fn draw_server_table(&mut self, frame: &mut Frame, server_area: Rect) {
-
-        let rows = [Row::new(vec!["Cell1", "Cell2", "Cell3"])];
-        // Columns widths are constrained in the same way as Layout...
-        let widths = [
-            Constraint::Length(5),
-            Constraint::Length(5),
-            Constraint::Length(10),
-        ];
-        let table = Table::new(rows, widths)
-            // ...and they can be separated by a fixed spacing.
-            .column_spacing(1)
-            // You can set the style of the entire Table.
-            .style(Style::new().blue())
-            // It has an optional header, which is simply a Row always visible at the top.
-            .header(
-                Row::new(vec!["Col1", "Col2", "Col3"])
-                .style(Style::new().bold())
-                // To add space between the header and the rest of the rows, specify the margin
-                .bottom_margin(1),
-                )
-            // It has an optional footer, which is simply a Row always visible at the bottom.
-            .footer(Row::new(vec!["Updated on Dec 28"]))
-            // As any other widget, a Table can be wrapped in a Block.
-            .block(Block::default().title("Table"))
-            // The selected row and its content can also be styled.
-            .highlight_style(Style::new().reversed())
-            // ...and potentially show a symbol in front of the selection.
-            .highlight_symbol(">>");
-
-        frame.render_stateful_widget(table, server_area, &mut self.table_state);
-
     }
 
     pub fn draw_email_prompt(&mut self, frame: &mut Frame, email_area: Rect) {
