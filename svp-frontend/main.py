@@ -4,6 +4,7 @@ import json
 import requests 
 import os 
 import argparse
+import re 
 
 import maskpass
 
@@ -15,12 +16,20 @@ DEFAULT_SERVER = f"https://localhost:{DEFAULT_PORT}/"
 
 VERIFY_CERT = path + "/../svp-backend/cert.pem"
 
+EMAIL_REGEX = r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,7}\b'
+
 class App:
     def __init__(self, server):
         self.server = server
 
     def run(self):
         menu()
+
+def check_email(email):
+    if(re.fullmatch(EMAIL_REGEX, email)):
+        return True
+    else:
+        return False
 
 def menu():
 
@@ -52,19 +61,30 @@ def login():
     login_payload = {"password": password, "username": username } 
     login_payload = json.dumps(login_payload)
     # gonna have to fix this in a real networking-orinented way
-    print(requests.post(server + 'auth/login', verify=VERIFY_CERT, data=login_payload))
+    response = requests.post(server + 'auth/login', verify=VERIFY_CERT, data=login_payload)
+    print(response)
     pass
 
 
 def signup():
-    email = input("Your Email: ");
+    if testing != 'True': 
+        while True:
+            email = input("Your Email: ");
+            if check_email(email):
+                break
+            else:
+                print("Invalid email. Please enter a vaild email.")
+    else: 
+        email = input("Your Email: ");
+
+
     username = input("Username: ");
     password = maskpass.askpass(prompt="Password: ")
 
-    signup_payload = { "email": email ,   "password": password, "username": username } 
+    signup_payload = { "email": email, "password": password, "username": username } 
     signup_payload = json.dumps(signup_payload)
     
-    print(server + 'auth/signup')
+    # print(server + 'auth/signup')
     response = requests.post(server + 'auth/signup', verify=VERIFY_CERT, data=signup_payload)
 
     print(response)
@@ -93,7 +113,9 @@ def command_list():
 if __name__ == "__main__": 
     parser = argparse.ArgumentParser(description="Secure Virtual Pets")
     parser.add_argument("--server", default=DEFAULT_SERVER, help="Server URL")
+    parser.add_argument("--testing", default='True', help="Server URL")
     args = parser.parse_args()
     server = args.server
+    testing = args.testing
     app = App(server)
     app.run()
