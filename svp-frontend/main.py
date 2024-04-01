@@ -81,11 +81,9 @@ def signup():
     username = input("Username: ");
     password = maskpass.askpass(prompt="Password: ")
 
-    signup_payload = { "email": email, "password": password, "username": username } 
-    signup_payload = json.dumps(signup_payload)
+    signup_payload = { "email": email, "password": password, "username": username }
     
-    # print(server + 'auth/signup')
-    response = requests.post(server + 'auth/signup', verify=VERIFY_CERT, data=signup_payload)
+    response = requests.post(server + 'auth/signup', verify=VERIFY_CERT, json=signup_payload)
 
     print(response)
 
