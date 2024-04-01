@@ -56,7 +56,7 @@ pub async fn login(username: String, password: String) -> impl IntoApiResponse  
             .unwrap();
     }
 
-    let user = user.unwrap();
+    let user = user.unwrap().clone();
 
     if !user.compare_password(&password) {
         return Response::builder()
@@ -64,6 +64,8 @@ pub async fn login(username: String, password: String) -> impl IntoApiResponse  
             .body("Incorrect password".to_string()) // Convert to String
             .unwrap();
     }
+
+    drop(app_state);
 
     let mut app_state = APP_STATE.lock().await;
 

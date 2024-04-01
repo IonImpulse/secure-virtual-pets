@@ -17,6 +17,7 @@ use std::sync::Arc;
 use tokio::sync::Mutex;
 use tower_http::trace::{self, TraceLayer};
 use tracing::{Level, Span};
+use tokio::time::{self};
 
 mod auth;
 mod encryption;
@@ -64,6 +65,9 @@ async fn main() {
     };
 
     println!("Listening on {}", addr);
+
+    // Spawn the periodic save task
+    tokio::spawn(save_state_periodically());
 
     tracing_subscriber::fmt()
         .with_target(false)
@@ -147,6 +151,30 @@ async fn main() {
         )
         .await
         .unwrap();
+}
+
+
+// Function to save the AppState to state.json
+async fn save_state_periodically() {
+    // Define a one-minute interval
+    let mut interval = time::interval(Duration::from_secs(60));
+
+    loop {
+        // Wait for the next interval tick
+        interval.tick().await;
+
+        tracing::info!("Saving state to state.json");
+
+        let state = APP_STATE.lock().await;
+
+        // Serialize the state to a JSON string
+        let state_json = serde_json::to_string(&*state).unwrap();
+
+        drop(state);
+
+        // Write the state to state.json
+        std::fs::write("state.json", state_json).unwrap();
+    }
 }
 
 #[derive(Debug, Clone)]
