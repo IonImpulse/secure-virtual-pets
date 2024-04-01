@@ -4,8 +4,8 @@ use axum_server::tls_rustls::RustlsConfig;
 
 use aide::{
     axum::{
-        routing::{get, post, patch, delete},
-        ApiRouter, IntoApiResponse
+        routing::{delete, get, patch, post},
+        ApiRouter, IntoApiResponse,
     },
     openapi::{OpenApi, Tag},
     transform::TransformOpenApi,
@@ -15,7 +15,7 @@ use once_cell::sync::Lazy;
 use std::net::SocketAddr;
 use std::sync::Arc;
 use tokio::sync::Mutex;
-use tower_http::trace::{self, TraceLayer};  
+use tower_http::trace::{self, TraceLayer};
 use tracing::Level;
 
 mod auth;
@@ -30,10 +30,10 @@ use crate::structs::*;
 use crate::utils::*;
 
 use crate::routes::routes_auth::*;
-use crate::routes::routes_pets::*;
-use crate::routes::routes_users::*;
 use crate::routes::routes_pet_yards::*;
+use crate::routes::routes_pets::*;
 use crate::routes::routes_public::*;
+use crate::routes::routes_users::*;
 
 // Create an arc mutex of AppState
 pub static APP_STATE: Lazy<Arc<Mutex<AppState>>> =
@@ -65,10 +65,14 @@ async fn main() {
 
     println!("Listening on {}", addr);
 
+    tracing_subscriber::fmt()
+        .with_target(true)
+        .compact()
+        .init();
+
     let app = ApiRouter::new()
         .route("/", get(index))
         .route("/redoc", Redoc::new("/api.json").axum_route())
-        
         // Routes for authentication
         .api_route("/auth/login", post(route_login))
         .api_route("/auth/signup", post(route_signup))
@@ -86,41 +90,38 @@ async fn main() {
             "/users/:user_uuid/pets/:pet_uuid",
             get(route_get_pet)
                 .patch(route_update_pet)
-                .delete(route_delete_pet)
+                .delete(route_delete_pet),
         )
-        .api_route(
-            "/users/:user_uuid/pets/new",
-            post(route_create_pet)
-        )
-
+        .api_route("/users/:user_uuid/pets/new", post(route_create_pet))
         // Routes for petyards
         .api_route(
             "/users/:user_uuid/pet_yards/:pet_yard_uuid",
             get(route_get_pet_yard)
                 .patch(route_update_pet_yard)
-                .delete(route_delete_pet_yard)
+                .delete(route_delete_pet_yard),
         )
         .api_route(
             "/users/:user_uuid/pet_yards/new",
-            post(route_create_pet_yard)
+            post(route_create_pet_yard),
         )
         .api_route(
             "/users/:user_uuid/pet_yards/:pet_yard_uuid/member/:member_uuid",
-            patch(route_add_member_to_pet_yard)
-            .delete(route_remove_member_from_pet_yard)
+            patch(route_add_member_to_pet_yard).delete(route_remove_member_from_pet_yard),
         )
         .api_route(
             "/users/:user_uuid/pet_yards/:pet_yard_uuid/pet/:pet_uuid",
-            patch(route_add_pet_to_pet_yard)
-            .delete(route_remove_pet_from_pet_yard)
+            patch(route_add_pet_to_pet_yard).delete(route_remove_pet_from_pet_yard),
         )
-
         // Public routes for users
         .api_route("/public/user/:uuid", get(route_get_public_user))
         .api_route("/public/pet/:uuid", get(route_get_public_pet))
         .api_route("/public/pet_yard/:uuid", get(route_get_public_pet_yard))
-
-        .route("/api.json", get(route_api_json));
+        .route("/api.json", get(route_api_json))
+        .layer(
+            TraceLayer::new_for_http()
+                .make_span_with(trace::DefaultMakeSpan::new().level(Level::INFO))
+                .on_response(trace::DefaultOnResponse::new().level(Level::INFO)),
+        );
 
     // If the paths are not found, create the pem files
     if !std::path::Path::new("cert.pem").exists() {
@@ -137,10 +138,11 @@ async fn main() {
 
     // create app with bind_tls
     axum_server::bind_rustls(addr, config)
-        .serve(app
-            .finish_api_with(&mut api, api_docs)
-            .layer(Extension(api))
-            .into_make_service())
+        .serve(
+            app.finish_api_with(&mut api, api_docs)
+                .layer(Extension(api))
+                .into_make_service(),
+        )
         .await
         .unwrap();
 }
@@ -163,6 +165,6 @@ fn api_docs(api: TransformOpenApi) -> TransformOpenApi {
         )
 }
 
-async fn index() -> impl IntoApiResponse  {
+async fn index() -> impl IntoApiResponse {
     "Hello, World!"
 }
