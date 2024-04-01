@@ -120,13 +120,7 @@ async fn main() {
         .api_route("/public/pet/:uuid", get(route_get_public_pet))
         .api_route("/public/pet_yard/:uuid", get(route_get_public_pet_yard))
 
-        .route("/api.json", get(route_api_json))
-        .layer(
-            TraceLayer::new_for_http()
-                .make_span_with(trace::DefaultMakeSpan::new()
-                    .level(Level::INFO))
-                .on_response(trace::DefaultOnResponse::new()
-                    .level(Level::INFO)));
+        .route("/api.json", get(route_api_json));
 
     // If the paths are not found, create the pem files
     if !std::path::Path::new("cert.pem").exists() {

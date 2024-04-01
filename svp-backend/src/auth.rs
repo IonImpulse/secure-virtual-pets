@@ -88,6 +88,8 @@ pub async fn signup(username: String, email: String, password: String) -> impl I
 
     let user = User::new(username.to_string(), email.to_string(), password.to_string());
 
+    drop(app_state);
+
     let mut app_state = APP_STATE.lock().await;
 
     app_state.users.insert(user.get_uuid(), user);
