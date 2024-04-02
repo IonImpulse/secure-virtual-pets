@@ -1,5 +1,5 @@
 use aide::redoc::Redoc;
-use axum::{http, Extension, Json};
+use axum::{error_handling::HandleErrorLayer, http, Extension, Json};
 use axum_server::tls_rustls::RustlsConfig;
 
 use aide::{
@@ -11,7 +11,6 @@ use aide::{
     transform::TransformOpenApi,
 };
 
-use axum::response::IntoResponse;
 use axum::{
     body::Body as BoxBody,
     http::{Request, StatusCode},
@@ -22,8 +21,8 @@ use std::{
     sync::Arc,
     task::{Context, Poll},
 };
-use tower::{Layer, Service};
-use tower_http::trace::TraceLayer;
+use tower::{Layer, Service, ServiceBuilder, buffer::BufferLayer, limit::RateLimitLayer,};
+use tower_http::{trace::TraceLayer, BoxError};
 
 use once_cell::sync::Lazy;
 use std::{net::SocketAddr, time::Duration};
@@ -135,8 +134,18 @@ async fn main() {
         .api_route("/public/pet/:uuid", get(route_get_public_pet))
         .api_route("/public/pet_yard/:uuid", get(route_get_public_pet_yard))
         .route("/api.json", get(route_api_json))
-        .layer(trace_layer)
-        .layer(AppStateSaverLayer);
+        .layer(AppStateSaverLayer)
+        .layer(
+            ServiceBuilder::new()
+                .layer(HandleErrorLayer::new(|err: BoxError| async move {
+                    (
+                        StatusCode::INTERNAL_SERVER_ERROR,
+                        format!("Unhandled error: {}", err),
+                    )
+                }))
+                .layer(BufferLayer::new(1024))
+                .layer(RateLimitLayer::new(100, Duration::from_secs(1))))
+        .layer(trace_layer);
 
     // If the paths are not found, create the pem files
     if !std::path::Path::new("cert.pem").exists() {

@@ -176,6 +176,20 @@ impl User {
         }).to_string()
     }
 
+    pub fn for_user_with_token(&self, token: String) -> String {
+        serde_json::json!({
+            "uuid": self.uuid,
+            "join_timestamp": self.join_timestamp,
+            "username": self.username,
+            "email": self.email,
+            "pets": self.pets,
+            "owned_pet_yards": self.owned_pet_yards,
+            "joined_pet_yards": self.joined_pet_yards,
+            "chat_logs": self.chat_logs,
+            "token": token,
+        }).to_string()
+    }
+
     pub fn for_public(&self) -> String {
         serde_json::json!({
             "uuid": self.uuid,

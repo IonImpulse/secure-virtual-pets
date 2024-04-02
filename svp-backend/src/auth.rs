@@ -12,6 +12,7 @@ use crate::APP_STATE;
 use axum::http::{self, Response, StatusCode};
 use aide::axum::IntoApiResponse;
 use axum::Json;
+use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use axum::body::HttpBody;
 
@@ -40,11 +41,6 @@ pub async fn verify_token_header(headers: &http::HeaderMap, uuid: &str) -> bool 
     verify_token(&token, uuid).await
 }
 
-
-pub struct LoginResponse {
-    user: User,
-    token: String,
-}
 
 /// Handles the login of a user.
 /// The user must provide their username and password.
@@ -77,12 +73,11 @@ pub async fn login(username: String, password: String) -> impl IntoApiResponse  
 
     let token = app_state.create_token(&user);
 
+    let response_body = user.for_user_with_token(token);
+
     Response::builder()
         .status(StatusCode::OK)
-        .body(LoginResponse{
-            user: user.clone(),
-            token: token.clone(),
-        }) // Convert to String
+        .body(response_body) // Convert to String
         .unwrap()
 }
 
