@@ -4,10 +4,10 @@ use axum_server::tls_rustls::RustlsConfig;
 
 use aide::{
     axum::{
-        routing::{delete, get, patch, post},
+        routing::{get, patch, post},
         ApiRouter, IntoApiResponse,
     },
-    openapi::{OpenApi, Tag},
+    openapi::{OpenApi},
     transform::TransformOpenApi,
 };
 
@@ -27,9 +27,9 @@ use tower_http::{trace::TraceLayer, BoxError};
 use once_cell::sync::Lazy;
 use std::{net::SocketAddr, time::Duration};
 use tokio::sync::Mutex;
-use tokio::time::{self};
+
 use tower_http::trace::{self};
-use tracing::{Level, Span};
+use tracing::{Span};
 
 mod auth;
 mod encryption;
@@ -37,8 +37,8 @@ mod routes;
 mod structs;
 mod utils;
 
-use crate::auth::*;
-use crate::encryption::*;
+
+
 use crate::structs::*;
 use crate::utils::*;
 
@@ -208,7 +208,7 @@ impl<B> trace::OnResponse<B> for CustomOnResponse {
             "http.status_code",
             &tracing::field::display(status.as_u16()),
         );
-        span.record("http.response_content_length", &length);
+        span.record("http.response_content_length", length);
 
         let latency_secs = latency.as_secs_f32();
 

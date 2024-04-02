@@ -83,7 +83,7 @@ pub fn hash(data: &str) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::Pet;
+    
 
     #[test]
     fn test_encrypt_decrypt() {

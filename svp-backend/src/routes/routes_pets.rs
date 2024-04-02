@@ -21,15 +21,15 @@ pub async fn route_get_pet(headers: HeaderMap, user_uuid: Path<String>, pet_uuid
     let pet = app_state.get_pet_by_uuid(&pet_uuid);
 
     if pet.is_none() {
-        return Response::builder()
+        Response::builder()
             .status(StatusCode::NOT_FOUND)
             .body("Pet not found".to_string()) // Convert to String
-            .unwrap();
+            .unwrap()
     } else {
-        return Response::builder()
+        Response::builder()
             .status(StatusCode::OK)
             .body(serde_json::to_string(pet.unwrap()).unwrap()) // Convert to String
-            .unwrap();
+            .unwrap()
     }
 }
 
@@ -71,7 +71,7 @@ pub async fn route_update_pet(headers: HeaderMap, user_uuid: Path<String>, pet_u
     }
 
     if payload.image.is_some() {
-        pet.set_image(payload.image.clone().unwrap());
+        pet.set_image(payload.image.unwrap());
     }
 
     if payload.species.is_some() {
@@ -84,10 +84,10 @@ pub async fn route_update_pet(headers: HeaderMap, user_uuid: Path<String>, pet_u
 
     app_state.update_pet(pet.clone());
 
-    return Response::builder()
+    Response::builder()
         .status(StatusCode::OK)
         .body(serde_json::to_string(&pet).unwrap()) // Convert to String
-        .unwrap();
+        .unwrap()
 }
 
 pub async fn route_delete_pet(headers: HeaderMap, user_uuid: Path<String>, pet_uuid: Path<String>) -> impl IntoApiResponse  {
@@ -114,10 +114,10 @@ pub async fn route_delete_pet(headers: HeaderMap, user_uuid: Path<String>, pet_u
 
     app_state.delete_pet(pet);
 
-    return Response::builder()
+    Response::builder()
         .status(StatusCode::OK)
         .body("Pet deleted".to_string()) // Convert to String
-        .unwrap();
+        .unwrap()
 }
 
 pub async fn route_create_pet(headers: HeaderMap, user_uuid: Path<String>, payload: Json<PetUpdate>) -> impl IntoApiResponse  {
@@ -131,12 +131,12 @@ pub async fn route_create_pet(headers: HeaderMap, user_uuid: Path<String>, paylo
 
     let mut app_state = APP_STATE.lock().await;
 
-    let pet = Pet::new(payload.name.clone().unwrap(), payload.species.clone().unwrap(), payload.image.clone().unwrap(), payload.pet_yard.clone());
+    let pet = Pet::new(payload.name.clone().unwrap(), payload.species.clone().unwrap(), payload.image.unwrap(), payload.pet_yard.clone());
 
     app_state.update_pet(pet.clone());
 
-    return Response::builder()
+    Response::builder()
         .status(StatusCode::OK)
         .body(serde_json::to_string(&pet).unwrap()) // Convert to String
-        .unwrap();
+        .unwrap()
 }

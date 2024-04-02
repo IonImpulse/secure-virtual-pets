@@ -20,15 +20,15 @@ pub async fn route_get_pet_yard(headers: HeaderMap, user_uuid: Path<String>, pet
     let pet_yard = app_state.get_pet_yard_by_uuid(&pet_yard_uuid);
 
     if pet_yard.is_none() {
-        return Response::builder()
+        Response::builder()
             .status(StatusCode::NOT_FOUND)
             .body("Pet yard not found".to_string()) // Convert to String
-            .unwrap();
+            .unwrap()
     } else {
-        return Response::builder()
+        Response::builder()
             .status(StatusCode::OK)
             .body(serde_json::to_string(pet_yard.unwrap()).unwrap()) // Convert to String
-            .unwrap();
+            .unwrap()
     }
 }
 
@@ -65,15 +65,15 @@ pub async fn route_update_pet_yard(headers: HeaderMap, user_uuid: Path<String>, 
     }
 
     if payload.image.is_some() {
-        pet_yard.set_image(payload.image.clone().unwrap());
+        pet_yard.set_image(payload.image.unwrap());
     }
 
     app_state.update_pet_yard(pet_yard.clone());
 
-    return Response::builder()
+    Response::builder()
         .status(StatusCode::OK)
         .body(serde_json::to_string(&pet_yard).unwrap()) // Convert to String
-        .unwrap();
+        .unwrap()
 }
 
 pub async fn route_delete_pet_yard(headers: HeaderMap, user_uuid: Path<String>, pet_yard_uuid: Path<String>) -> impl IntoApiResponse  {
@@ -100,10 +100,10 @@ pub async fn route_delete_pet_yard(headers: HeaderMap, user_uuid: Path<String>, 
 
     app_state.delete_pet_yard(pet_yard);
 
-    return Response::builder()
+    Response::builder()
         .status(StatusCode::OK)
         .body("Pet yard deleted".to_string()) // Convert to String
-        .unwrap();
+        .unwrap()
 }
 
 pub async fn route_create_pet_yard(headers: HeaderMap, user_uuid: Path<String>, payload: Json<PetYardUpdate>) -> impl IntoApiResponse  {
@@ -117,14 +117,14 @@ pub async fn route_create_pet_yard(headers: HeaderMap, user_uuid: Path<String>, 
 
     let mut app_state = APP_STATE.lock().await;
 
-    let pet_yard = PetYard::new(payload.name.clone().unwrap(), user_uuid.to_string(), payload.image.clone().unwrap());
+    let pet_yard = PetYard::new(payload.name.clone().unwrap(), user_uuid.to_string(), payload.image.unwrap());
 
     app_state.update_pet_yard(pet_yard.clone());
 
-    return Response::builder()
+    Response::builder()
         .status(StatusCode::OK)
         .body(serde_json::to_string(&pet_yard).unwrap()) // Convert to String
-        .unwrap();
+        .unwrap()
 }
 
 pub async fn route_add_member_to_pet_yard(headers: HeaderMap, user_uuid: Path<String>, pet_yard_uuid: Path<String>, member_uuid: Path<String>) -> impl IntoApiResponse  {
@@ -153,10 +153,10 @@ pub async fn route_add_member_to_pet_yard(headers: HeaderMap, user_uuid: Path<St
 
     app_state.update_pet_yard(pet_yard.clone());
 
-    return Response::builder()
+    Response::builder()
         .status(StatusCode::OK)
         .body(serde_json::to_string(&pet_yard).unwrap()) // Convert to String
-        .unwrap();
+        .unwrap()
 }
 
 pub async fn route_remove_member_from_pet_yard(headers: HeaderMap, user_uuid: Path<String>, pet_yard_uuid: Path<String>, member_uuid: Path<String>) -> impl IntoApiResponse  {
@@ -185,10 +185,10 @@ pub async fn route_remove_member_from_pet_yard(headers: HeaderMap, user_uuid: Pa
 
     app_state.update_pet_yard(pet_yard.clone());
 
-    return Response::builder()
+    Response::builder()
         .status(StatusCode::OK)
         .body(serde_json::to_string(&pet_yard).unwrap()) // Convert to String
-        .unwrap();
+        .unwrap()
 }
 
 pub async fn route_add_pet_to_pet_yard(headers: HeaderMap, user_uuid: Path<String>, pet_yard_uuid: Path<String>, pet_uuid: Path<String>) -> impl IntoApiResponse  {
@@ -217,10 +217,10 @@ pub async fn route_add_pet_to_pet_yard(headers: HeaderMap, user_uuid: Path<Strin
 
     app_state.update_pet_yard(pet_yard.clone());
 
-    return Response::builder()
+    Response::builder()
         .status(StatusCode::OK)
         .body(serde_json::to_string(&pet_yard).unwrap()) // Convert to String
-        .unwrap();
+        .unwrap()
 }
 
 pub async fn route_remove_pet_from_pet_yard(headers: HeaderMap, user_uuid: Path<String>, pet_yard_uuid: Path<String>, pet_uuid: Path<String>) -> impl IntoApiResponse  {
@@ -249,8 +249,8 @@ pub async fn route_remove_pet_from_pet_yard(headers: HeaderMap, user_uuid: Path<
 
     app_state.update_pet_yard(pet_yard.clone());
 
-    return Response::builder()
+    Response::builder()
         .status(StatusCode::OK)
         .body(serde_json::to_string(&pet_yard).unwrap()) // Convert to String
-        .unwrap();
+        .unwrap()
 }

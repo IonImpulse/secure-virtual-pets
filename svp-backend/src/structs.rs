@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 use uuid::Uuid;
-use chrono;
+
 
 use crate::encryption::hash;
 
@@ -43,12 +43,7 @@ impl AppState {
     }
 
     pub fn get_user_by_username(&self, username: &str) -> Option<&User> {
-        for user in self.users.values() {
-            if user.username == username {
-                return Some(user);
-            }
-        }
-        None
+        self.users.values().find(|&user| user.username == username)
     }
 
     pub fn update_user(&mut self, user: User) {
@@ -254,7 +249,7 @@ impl DirectMessage {
         }
     }
 
-    pub fn decrypt(&self, key: String) -> String {
+    pub fn decrypt(&self, _key: String) -> String {
         // Decrypt the message using the key
         self.encrypted_msg.clone() // Placeholder
     }
