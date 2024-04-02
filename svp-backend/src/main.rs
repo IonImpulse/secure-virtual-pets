@@ -11,13 +11,26 @@ use aide::{
     transform::TransformOpenApi,
 };
 
+use axum::response::IntoResponse;
+use axum::{
+    body::Body as BoxBody,
+    http::{Request, StatusCode},
+    response::Response,
+};
+use futures::future::{BoxFuture, FutureExt};
+use std::{
+    sync::Arc,
+    task::{Context, Poll},
+};
+use tower::{Layer, Service};
+use tower_http::trace::TraceLayer;
+
 use once_cell::sync::Lazy;
 use std::{net::SocketAddr, time::Duration};
-use std::sync::Arc;
 use tokio::sync::Mutex;
-use tower_http::trace::{self, TraceLayer};
-use tracing::{Level, Span};
 use tokio::time::{self};
+use tower_http::trace::{self};
+use tracing::{Level, Span};
 
 mod auth;
 mod encryption;
@@ -65,9 +78,6 @@ async fn main() {
     };
 
     println!("Listening on {}", addr);
-
-    // Spawn the periodic save task
-    tokio::spawn(save_state_periodically());
 
     tracing_subscriber::fmt()
         .with_target(false)
@@ -125,9 +135,8 @@ async fn main() {
         .api_route("/public/pet/:uuid", get(route_get_public_pet))
         .api_route("/public/pet_yard/:uuid", get(route_get_public_pet_yard))
         .route("/api.json", get(route_api_json))
-        .layer(
-            trace_layer
-        );
+        .layer(trace_layer)
+        .layer(AppStateSaverLayer);
 
     // If the paths are not found, create the pem files
     if !std::path::Path::new("cert.pem").exists() {
@@ -151,30 +160,6 @@ async fn main() {
         )
         .await
         .unwrap();
-}
-
-
-// Function to save the AppState to state.json
-async fn save_state_periodically() {
-    // Define a one-minute interval
-    let mut interval = time::interval(Duration::from_secs(60));
-
-    loop {
-        // Wait for the next interval tick
-        interval.tick().await;
-
-        tracing::info!("Saving state to state.json");
-
-        let state = APP_STATE.lock().await;
-
-        // Serialize the state to a JSON string
-        let state_json = serde_json::to_string(&*state).unwrap();
-
-        drop(state);
-
-        // Write the state to state.json
-        std::fs::write("state.json", state_json).unwrap();
-    }
 }
 
 #[derive(Debug, Clone)]
@@ -210,7 +195,10 @@ impl<B> trace::OnResponse<B> for CustomOnResponse {
             .and_then(|val| val.to_str().ok())
             .unwrap_or("-");
 
-        span.record("http.status_code", &tracing::field::display(status.as_u16()));
+        span.record(
+            "http.status_code",
+            &tracing::field::display(status.as_u16()),
+        );
         span.record("http.response_content_length", &length);
 
         let latency_secs = latency.as_secs_f32();
@@ -224,9 +212,62 @@ impl<B> trace::OnResponse<B> for CustomOnResponse {
     }
 }
 
+#[derive(Debug, Clone)]
+struct AppStateSaverLayer;
+
+impl<S> Layer<S> for AppStateSaverLayer {
+    type Service = AppStateSaver<S>;
+
+    fn layer(&self, inner: S) -> Self::Service {
+        AppStateSaver { inner }
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct AppStateSaver<S> {
+    inner: S,
+}
+
+impl<S, B> Service<Request<B>> for AppStateSaver<S>
+where
+    S: Service<Request<B>, Response = Response<BoxBody>> + Clone + Send + 'static,
+    S::Future: Send + 'static,
+    B: Send + 'static,
+    S::Error: Send + 'static,
+{
+    type Response = S::Response;
+    type Error = S::Error;
+    type Future = BoxFuture<'static, Result<Self::Response, Self::Error>>;
+
+    fn poll_ready(&mut self, ctx: &mut Context<'_>) -> Poll<Result<(), Self::Error>> {
+        self.inner.poll_ready(ctx)
+    }
+
+    fn call(&mut self, req: Request<B>) -> Self::Future {
+        let mut inner = self.inner.clone();
+        let future = inner.call(req);
+
+        async move {
+            let response = future.await?;
+
+            // Save state to a file after request handling
+            save_state_to_file().await;
+
+            Ok(response)
+        }.boxed()
+    }
+}
+
+async fn save_state_to_file() {
+    let state = serde_json::to_string(&*APP_STATE.lock().await).unwrap();
+
+    std::fs::write("state.json", state).unwrap();
+}
+
 async fn route_api_json(Extension(api): Extension<OpenApi>) -> impl IntoApiResponse {
     Json(api)
 }
+
 fn api_docs(api: TransformOpenApi) -> TransformOpenApi {
     api.title("Secure Virtual Pet Backend API")
         .summary("A secure virtual pet backend API.")

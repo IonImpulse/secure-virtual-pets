@@ -1622,6 +1622,7 @@ dependencies = [
  "axum-server",
  "base64 0.22.0",
  "chrono",
+ "futures",
  "headers",
  "once_cell",
  "rand",

@@ -32,3 +32,4 @@ rcgen = "0.12"
 aide = { version = "0.13.0", features = ["redoc", "axum", "axum-extra", "macros"] }
 schemars = { version = "0.8" }
 headers = "0.4"
+futures = "0.3"
