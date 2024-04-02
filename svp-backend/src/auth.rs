@@ -40,6 +40,12 @@ pub async fn verify_token_header(headers: &http::HeaderMap, uuid: &str) -> bool 
     verify_token(&token, uuid).await
 }
 
+
+pub struct LoginResponse {
+    user: User,
+    token: String,
+}
+
 /// Handles the login of a user.
 /// The user must provide their username and password.
 /// The password is hashed and salted.
@@ -73,7 +79,10 @@ pub async fn login(username: String, password: String) -> impl IntoApiResponse  
 
     Response::builder()
         .status(StatusCode::OK)
-        .body(token.to_string()) // Convert to String
+        .body(LoginResponse{
+            user: user.clone(),
+            token: token.clone(),
+        }) // Convert to String
         .unwrap()
 }
 
