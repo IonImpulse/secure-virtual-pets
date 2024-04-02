@@ -8,6 +8,10 @@ import re
 
 import maskpass
 
+global server
+
+import user_functions
+
 path = os.path.dirname(os.path.abspath(__file__))
 
 DEFAULT_PORT = 3000
@@ -18,12 +22,13 @@ VERIFY_CERT = path + "/../svp-backend/cert.pem"
 
 EMAIL_REGEX = r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,7}\b'
 
+
 class App:
     def __init__(self, server):
         self.server = server
 
     def run(self):
-        menu()
+        main_menu()
 
 def check_email(email):
     if(re.fullmatch(EMAIL_REGEX, email)):
@@ -31,7 +36,7 @@ def check_email(email):
     else:
         return False
 
-def menu():
+def main_menu():
 
     header()
 
@@ -54,15 +59,48 @@ def menu():
         else:
             print("I'm sorry, I didn't recognize that command.")
 
+def user_menu(username, user_content, uuid, user_token):
+
+    print("Welcome " + username + ": What would you like to do?\n")
+    user_command_list()
+    #Prints out user command list
+    while True:
+        dec = input('> ')
+        dec = dec.rstrip()
+        if dec == '1':
+            user_functions.view_pets(server, user_content, uuid, user_token)
+        elif dec == '2': 
+            pass 
+        elif dec == '3': 
+            pass
+        elif dec == '4': 
+            pass
+        elif dec == 'quit':
+            break
+        else:
+            print("I'm sorry, I didn't recognize that command.")
+
+
 def login():
     username = input("Username: ");
     password = maskpass.askpass(prompt="Password: ")
 
     login_payload = {"password": password, "username": username} 
     response = requests.post(server + 'auth/login', verify=VERIFY_CERT, json=login_payload)
-    print(response)
-    pass
+    
+    if response.status_code == 200:
+        print("Successfully logged in as " + username)
+    else: 
+        print("Login failed") 
+        return response.status_code
 
+    user_details = response.json() 
+
+    # print(user_details) 
+    user_token = user_details["token"]
+    uuid = user_details["uuid"] 
+
+    user_menu(username, user_details, uuid, user_token) 
 
 def signup():
     if testing != 'True': 
@@ -102,6 +140,16 @@ def command_list():
     [\033[32m1\033[0m] : Login
     [\033[32m2\033[0m] : Signup 
     quit : close the program
+    """)
+
+
+def user_command_list():
+    print("""
+    [\033[32m1\033[0m] : View Pets
+    [\033[32m2\033[0m] : View Yards
+    [\033[32m3\033[0m] : Make a Pet 
+    [\033[32m4\033[0m] : Do Something Else
+    logout : close the program
     """)
 
 if __name__ == "__main__": 
