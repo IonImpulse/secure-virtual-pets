@@ -12,7 +12,7 @@ use ratatui::{
 use tui_prompts::prelude::*;
 
 
-//This implementation contains 
+//This implementation contains general functions used across the front-end application.
 impl <'a> App <'a> {
 
     // ================================= Drawing the prompts =================================
@@ -60,6 +60,7 @@ impl <'a> App <'a> {
 
 
     // ================================= State matching and Focusing =================================
+    
     pub fn current_state(&mut self) -> &mut TextState<'a> {
         match self.current_field {
             Field::Email => &mut self.email_state, //should never be hit
@@ -135,6 +136,7 @@ impl <'a> App <'a> {
     //submitting a string to a state
     pub fn submit(&mut self) {
         self.current_state().complete();
+        //self.current_state().();
         if self.current_state().is_finished() && !self.is_finished() {
             self.current_state().blur();
             self.current_field = self.next_field();

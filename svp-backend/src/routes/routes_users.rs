@@ -21,15 +21,15 @@ pub async fn route_get_user(headers: HeaderMap, uuid: Path<String>) -> impl Into
     let user = app_state.get_user_by_uuid(&uuid);
 
     if user.is_none() {
-        return Response::builder()
+        Response::builder()
             .status(StatusCode::NOT_FOUND)
             .body("User not found".to_string()) // Convert to String
-            .unwrap();
+            .unwrap()
     } else {
-        return Response::builder()
+        Response::builder()
             .status(StatusCode::OK)
             .body(user.unwrap().for_user()) // Convert to String
-            .unwrap();
+            .unwrap()
     }
 }
 

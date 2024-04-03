@@ -4,16 +4,17 @@ This file handling login and signup of users.
 
 */
 
-use std::f32::consts::E;
+
 
 use crate::structs::User;
-use crate::encryption::{encrypt, decrypt};
+
 use crate::APP_STATE;
 use axum::http::{self, Response, StatusCode};
 use aide::axum::IntoApiResponse;
-use axum::Json;
-use serde::{Deserialize, Serialize};
-use axum::body::HttpBody;
+
+
+
+
 
 pub async fn verify_token(token: &str, uuid: &str) -> bool {
     let app_state = APP_STATE.lock().await;
@@ -22,9 +23,9 @@ pub async fn verify_token(token: &str, uuid: &str) -> bool {
         let user_token = app_state.tokens.get(token).unwrap();
 
         // Check if token is valid
-        return user_token.is_valid() && user_token.get_uuid() == uuid;
+        user_token.is_valid() && user_token.get_uuid() == uuid
     } else {
-        return false;
+        false
     }
 }
 
@@ -39,6 +40,7 @@ pub async fn verify_token_header(headers: &http::HeaderMap, uuid: &str) -> bool 
 
     verify_token(&token, uuid).await
 }
+
 
 /// Handles the login of a user.
 /// The user must provide their username and password.
@@ -56,7 +58,7 @@ pub async fn login(username: String, password: String) -> impl IntoApiResponse  
             .unwrap();
     }
 
-    let user = user.unwrap();
+    let user = user.unwrap().clone();
 
     if !user.compare_password(&password) {
         return Response::builder()
@@ -65,13 +67,17 @@ pub async fn login(username: String, password: String) -> impl IntoApiResponse  
             .unwrap();
     }
 
+    drop(app_state);
+
     let mut app_state = APP_STATE.lock().await;
 
     let token = app_state.create_token(&user);
 
+    let response_body = user.for_user_with_token(token);
+
     Response::builder()
         .status(StatusCode::OK)
-        .body(token.to_string()) // Convert to String
+        .body(response_body) // Convert to String
         .unwrap()
 }
 
@@ -87,6 +93,8 @@ pub async fn signup(username: String, email: String, password: String) -> impl I
     }
 
     let user = User::new(username.to_string(), email.to_string(), password.to_string());
+
+    drop(app_state);
 
     let mut app_state = APP_STATE.lock().await;
 
@@ -132,7 +140,7 @@ pub async fn verify(token: String, uuid: String) -> impl IntoApiResponse  {
     }
 }
 
-pub async fn refresh(token: String, uuid: String) -> impl IntoApiResponse  {
+pub async fn refresh(token: String, _uuid: String) -> impl IntoApiResponse  {
     let mut app_state = APP_STATE.lock().await;
 
     if app_state.tokens.contains_key(&token) {

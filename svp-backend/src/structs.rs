@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 use uuid::Uuid;
-use chrono;
+
 
 use crate::encryption::hash;
 
@@ -43,12 +43,7 @@ impl AppState {
     }
 
     pub fn get_user_by_username(&self, username: &str) -> Option<&User> {
-        for user in self.users.values() {
-            if user.username == username {
-                return Some(user);
-            }
-        }
-        None
+        self.users.values().find(|&user| user.username == username)
     }
 
     pub fn update_user(&mut self, user: User) {
@@ -176,6 +171,20 @@ impl User {
         }).to_string()
     }
 
+    pub fn for_user_with_token(&self, token: String) -> String {
+        serde_json::json!({
+            "uuid": self.uuid,
+            "join_timestamp": self.join_timestamp,
+            "username": self.username,
+            "email": self.email,
+            "pets": self.pets,
+            "owned_pet_yards": self.owned_pet_yards,
+            "joined_pet_yards": self.joined_pet_yards,
+            "chat_logs": self.chat_logs,
+            "token": token,
+        }).to_string()
+    }
+
     pub fn for_public(&self) -> String {
         serde_json::json!({
             "uuid": self.uuid,
@@ -272,7 +281,7 @@ impl DirectMessage {
         }
     }
 
-    pub fn decrypt(&self, key: String) -> String {
+    pub fn decrypt(&self, _key: String) -> String {
         // Decrypt the message using the key
         self.encrypted_msg.clone() // Placeholder
     }
