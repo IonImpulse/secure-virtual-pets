@@ -112,6 +112,13 @@ pub async fn route_delete_pet(headers: HeaderMap, user_uuid: Path<String>, pet_u
 
     let pet = pet.unwrap().to_owned();
 
+    // Remove the pet from the user's pet list
+    let mut user = app_state.get_user_by_uuid(&user_uuid).unwrap().clone();
+
+    user.remove_pet(pet.get_uuid());
+
+    app_state.update_user(user);
+
     app_state.delete_pet(pet);
 
     return Response::builder()
@@ -134,6 +141,13 @@ pub async fn route_create_pet(headers: HeaderMap, user_uuid: Path<String>, paylo
     let pet = Pet::new(payload.name.clone().unwrap(), payload.species.clone().unwrap(), payload.image.clone().unwrap(), payload.pet_yard.clone());
 
     app_state.update_pet(pet.clone());
+
+    // Add the pet to the user's pet list
+    let mut user = app_state.get_user_by_uuid(&user_uuid).unwrap().clone();
+
+    user.add_pet(pet.get_uuid());
+
+    app_state.update_user(user);
 
     return Response::builder()
         .status(StatusCode::OK)

@@ -184,6 +184,38 @@ impl User {
             "owned_pet_yards": self.owned_pet_yards,
         }).to_string()
     }
+
+    pub fn add_pet(&mut self, pet_uuid: String) {
+        if !self.pets.contains(&pet_uuid) {
+            self.pets.push(pet_uuid);
+        }
+    }
+
+    pub fn remove_pet(&mut self, pet_uuid: String) {
+        self.pets.retain(|uuid| uuid != &pet_uuid);
+    }
+
+    pub fn add_owned_pet_yard(&mut self, pet_yard_uuid: String) {
+        if !self.owned_pet_yards.contains(&pet_yard_uuid) {
+            self.owned_pet_yards.push(pet_yard_uuid);
+        }
+    }
+
+    pub fn remove_owned_pet_yard(&mut self, pet_yard_uuid: String) {
+        self.owned_pet_yards.retain(|uuid| uuid != &pet_yard_uuid);
+    }
+
+    pub fn add_joined_pet_yard(&mut self, pet_yard_uuid: String) {
+        if !self.joined_pet_yards.contains(&pet_yard_uuid) {
+            self.joined_pet_yards.push(pet_yard_uuid);
+        }
+    }
+
+    pub fn remove_joined_pet_yard(&mut self, pet_yard_uuid: String) {
+        self.joined_pet_yards.retain(|uuid| uuid != &pet_yard_uuid);
+    }
+
+
 }
 
 #[derive(Debug, serde::Serialize, serde::Deserialize, PartialEq, Eq, Clone)]
@@ -269,6 +301,10 @@ impl Pet {
             experience: 0,
             pet_yard,
         }
+    }
+
+    pub fn get_uuid(&self) -> String {
+        self.uuid.clone()
     }
 
     pub fn set_pet_yard(&mut self, pet_yard_uuid: String) {
@@ -360,6 +396,10 @@ impl PetYard {
             members: vec![],
             pets: vec![],
         }
+    }
+
+    pub fn get_uuid(&self) -> String {
+        self.uuid.clone()
     }
 
     pub fn set_name(&mut self, name: String) {

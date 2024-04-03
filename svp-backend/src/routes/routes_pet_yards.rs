@@ -98,6 +98,13 @@ pub async fn route_delete_pet_yard(headers: HeaderMap, user_uuid: Path<String>, 
 
     let pet_yard = pet_yard.unwrap().to_owned();
 
+    // Remove pet yard from user
+    let mut user = app_state.get_user_by_uuid(&user_uuid).unwrap().to_owned();
+
+    user.remove_owned_pet_yard(pet_yard.get_uuid());
+
+    app_state.update_user(user);
+    
     app_state.delete_pet_yard(pet_yard);
 
     return Response::builder()
@@ -120,6 +127,13 @@ pub async fn route_create_pet_yard(headers: HeaderMap, user_uuid: Path<String>, 
     let pet_yard = PetYard::new(payload.name.clone().unwrap(), user_uuid.to_string(), payload.image.clone().unwrap());
 
     app_state.update_pet_yard(pet_yard.clone());
+
+    // Add pet yard to user
+    let mut user = app_state.get_user_by_uuid(&user_uuid).unwrap().to_owned();
+
+    user.add_owned_pet_yard(pet_yard.get_uuid());
+
+    app_state.update_user(user);
 
     return Response::builder()
         .status(StatusCode::OK)
