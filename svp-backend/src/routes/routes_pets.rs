@@ -149,7 +149,7 @@ pub async fn route_create_pet(headers: HeaderMap, user_uuid: Path<String>, paylo
 
     app_state.update_user(user);
 
-    return Response::builder()
+    Response::builder()
         .status(StatusCode::OK)
         .body(serde_json::to_string(&pet).unwrap()) // Convert to String
         .unwrap()

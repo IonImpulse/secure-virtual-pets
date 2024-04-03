@@ -135,7 +135,7 @@ pub async fn route_create_pet_yard(headers: HeaderMap, user_uuid: Path<String>, 
 
     app_state.update_user(user);
 
-    return Response::builder()
+    Response::builder()
         .status(StatusCode::OK)
         .body(serde_json::to_string(&pet_yard).unwrap()) // Convert to String
         .unwrap()
