@@ -2,6 +2,7 @@
 
 import json
 import requests 
+from requests.exceptions import ConnectionError
 import os 
 import argparse
 import re 
@@ -59,22 +60,29 @@ def main_menu():
         else:
             print("I'm sorry, I didn't recognize that command.")
 
-def user_menu(username, user_content, uuid, user_token):
+def user_menu(username, uuid, user_token):
 
     print("Welcome " + username + ": What would you like to do?\n")
     user_command_list()
     #Prints out user command list
     while True:
+        response = requests.get(server + 'users/' + uuid, verify=VERIFY_CERT, headers={'X-Auth-Key': user_token})
+        user_content = response.json()
         dec = input('> ')
         dec = dec.rstrip()
+        #View available pets 
         if dec == '1':
             user_functions.view_pets(server, user_content, uuid, user_token)
+        #View Joined Yards
         elif dec == '2': 
-            pass 
+            user_functions.view_joined_yards(server, user_content, uuid, user_token)
+        #View your yards 
         elif dec == '3': 
-            pass
+            user_functions.view_owned_yards(server, user_content, uuid, user_token)
         elif dec == '4': 
-            pass
+            user_functions.create_pet(server, user_content, uuid, user_token)
+        elif dec == '5': 
+            user_functions.create_yard(server, user_content, uuid, user_token)
         elif dec == 'quit':
             break
         else:
@@ -86,7 +94,11 @@ def login():
     password = maskpass.askpass(prompt="Password: ")
 
     login_payload = {"password": password, "username": username} 
-    response = requests.post(server + 'auth/login', verify=VERIFY_CERT, json=login_payload)
+    try:
+        response = requests.post(server + 'auth/login', verify=VERIFY_CERT, json=login_payload)
+    except ConnectionError: 
+        print("Connection was refused")
+        return 1
     
     if response.status_code == 200:
         print("Successfully logged in as " + username)
@@ -100,7 +112,7 @@ def login():
     user_token = user_details["token"]
     uuid = user_details["uuid"] 
 
-    user_menu(username, user_details, uuid, user_token) 
+    user_menu(username, uuid, user_token) 
 
 def signup():
     if testing != 'True': 
@@ -112,7 +124,6 @@ def signup():
                 print("Invalid email. Please enter a vaild email.")
     else: 
         email = input("Your Email: ");
-
 
     username = input("Username: ");
     password = maskpass.askpass(prompt="Password: ")
@@ -146,9 +157,10 @@ def command_list():
 def user_command_list():
     print("""
     [\033[32m1\033[0m] : View Pets
-    [\033[32m2\033[0m] : View Yards
-    [\033[32m3\033[0m] : Make a Pet 
-    [\033[32m4\033[0m] : Do Something Else
+    [\033[32m2\033[0m] : View Joined Yards
+    [\033[32m3\033[0m] : View Owned Yards 
+    [\033[32m4\033[0m] : Create a pet
+    [\033[32m5\033[0m] : Create a Yard 
     logout : close the program
     """)
 
