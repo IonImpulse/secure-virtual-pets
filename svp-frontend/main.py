@@ -23,7 +23,6 @@ VERIFY_CERT = path + "/../svp-backend/cert.pem"
 
 EMAIL_REGEX = r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,7}\b'
 
-
 class App:
     def __init__(self, server):
         self.server = server
@@ -68,6 +67,7 @@ def user_menu(username, uuid, user_token):
     while True:
         response = requests.get(server + 'users/' + uuid, verify=VERIFY_CERT, headers={'X-Auth-Key': user_token})
         user_content = response.json()
+        # print(user_content)
         dec = input('> ')
         dec = dec.rstrip()
         #View available pets 
