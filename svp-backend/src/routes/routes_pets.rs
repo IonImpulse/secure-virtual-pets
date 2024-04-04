@@ -7,7 +7,7 @@ use serde::Deserialize;
 use schemars::JsonSchema;
 
 
-pub async fn route_get_pet(headers: HeaderMap, user_uuid: Path<String>, pet_uuid: Path<String>) -> impl IntoApiResponse  {
+pub async fn route_get_pet(headers: HeaderMap, Path((user_uuid, pet_uuid)): Path<(String, String)>) -> impl IntoApiResponse  {
     // Verify token
     if !verify_token_header(&headers, &user_uuid).await {
         return Response::builder()
@@ -44,7 +44,7 @@ pub struct PetUpdate {
 
 /// Handles updating the info about a pet, currently only name, image, species, and pet yard
 /// The user must provide their UUID and token.
-pub async fn route_update_pet(headers: HeaderMap, user_uuid: Path<String>, pet_uuid: Path<String>, payload: Json<PetUpdate>) -> impl IntoApiResponse  {
+pub async fn route_update_pet(headers: HeaderMap, Path((user_uuid, pet_uuid)): Path<(String, String)>, payload: Json<PetUpdate>) -> impl IntoApiResponse  {
     // Verify token
     if !verify_token_header(&headers, &user_uuid).await {
         return Response::builder()
@@ -90,7 +90,7 @@ pub async fn route_update_pet(headers: HeaderMap, user_uuid: Path<String>, pet_u
         .unwrap()
 }
 
-pub async fn route_delete_pet(headers: HeaderMap, user_uuid: Path<String>, pet_uuid: Path<String>) -> impl IntoApiResponse  {
+pub async fn route_delete_pet(headers: HeaderMap, Path((user_uuid, pet_uuid)): Path<(String, String)>) -> impl IntoApiResponse  {
     // Verify token
     if !verify_token_header(&headers, &user_uuid).await {
         return Response::builder()

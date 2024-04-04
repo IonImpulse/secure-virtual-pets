@@ -41,10 +41,10 @@ pub async fn route_logout(token: Path<String>) -> impl IntoApiResponse  {
 
 /// Handles the verification of a token.
 /// The user must provide their token.
-pub async fn route_verify(uuid: Path<String>, token: Path<String>) -> impl IntoApiResponse  {
+pub async fn route_verify(Path((uuid, token)): Path<(String, String)>) -> impl IntoApiResponse  {
     verify(uuid.to_string(), token.to_string()).await
 }
 
-pub async fn route_refresh(uuid: Path<String>, token: Path<String>) -> impl IntoApiResponse  {
+pub async fn route_refresh(Path((uuid, token)): Path<(String, String)>) -> impl IntoApiResponse  {
     refresh(uuid.to_string(), token.to_string()).await
 }
