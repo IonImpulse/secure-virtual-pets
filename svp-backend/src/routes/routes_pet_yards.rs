@@ -105,7 +105,7 @@ pub async fn route_delete_pet_yard(headers: HeaderMap, Path((user_uuid, pet_yard
 
     app_state.update_user(user);
     
-    app_state.delete_pet_yard(pet_yard);
+    app_state.delete_pet_yard(&pet_yard.get_uuid());
 
     Response::builder()
         .status(StatusCode::OK)

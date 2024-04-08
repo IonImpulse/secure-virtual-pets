@@ -1,7 +1,9 @@
-use crate::auth::*;
-use axum::extract::{Path, Json};
-use serde::Deserialize;
+use crate::{auth::*, User};
 use aide::axum::IntoApiResponse;
+use axum::extract::{Path, Json};
+use axum::http::{Response, StatusCode, HeaderMap};
+use crate::APP_STATE;
+use serde::Deserialize;
 use schemars::JsonSchema;
 
 
@@ -14,9 +16,50 @@ pub struct Login {
 /// Handles the login of a user.
 /// The user must provide their username and password.
 pub async fn route_login(payload: Json<Login>) -> impl IntoApiResponse  {
+    let username = payload.username.clone();
+    let password = payload.password.clone();
+    
     // Get json from request
-    login(payload.username.clone(), payload.password.clone()).await
-}
+    let app_state = APP_STATE.lock().await;
+
+    let user = app_state.get_user_by_username(&username);
+
+    if user.is_none() {
+        tracing::warn!(
+            "User not found: {}",
+            username
+        );
+        return Response::builder()
+            .status(StatusCode::UNAUTHORIZED)
+            .body("User / password combination not found".to_string()) // Convert to String
+            .unwrap();
+    }
+
+    let user = user.unwrap().clone();
+
+    if !user.compare_password(&password) {
+        tracing::warn!(
+            "Invalid password for user: {}",
+            username
+        );
+        return Response::builder()
+            .status(StatusCode::UNAUTHORIZED)
+            .body("User / password combination not found".to_string()) // Convert to String
+            .unwrap();
+    }
+
+    drop(app_state);
+
+    let mut app_state = APP_STATE.lock().await;
+
+    let token = app_state.create_token(&user);
+
+    let response_body = user.for_user_with_token(token);
+
+    Response::builder()
+        .status(StatusCode::OK)
+        .body(response_body) // Convert to String
+        .unwrap()}
 
 
 #[derive(Deserialize, JsonSchema)]

@@ -17,6 +17,7 @@ use axum::{
     response::Response,
 };
 use futures::future::{BoxFuture, FutureExt};
+use tracing_subscriber::layer::SubscriberExt;
 use std::{
     sync::Arc,
     task::{Context, Poll},
@@ -30,6 +31,8 @@ use tokio::sync::Mutex;
 
 use tower_http::trace::{self};
 use tracing::{Span};
+use tracing_appender::rolling::never;
+use tracing_appender::non_blocking;
 
 mod auth;
 mod encryption;
@@ -77,11 +80,33 @@ async fn main() {
     };
 
     println!("Listening on {}", addr);
-
-    tracing_subscriber::fmt()
+    
+    let file_appender = tracing_appender::rolling::never("", "svp.log");
+    let (file_writer, _guard) = tracing_appender::non_blocking(file_appender);
+    
+    // Create a layer for logging to a file
+    let file_layer = tracing_subscriber::fmt::layer()
+        .with_writer(file_writer)
         .with_target(false)
         .compact()
-        .init();
+        .with_ansi(false);
+
+    // Create a layer for logging to stdout
+    let stdout_layer = tracing_subscriber::fmt::layer()
+        .with_writer(std::io::stdout)
+        .with_target(false)
+        .compact()
+        .with_ansi(true);
+
+    // Combine the layers on top of a `Registry`
+    let subscriber = tracing_subscriber::registry()
+        .with(file_layer)
+        .with(stdout_layer)
+        .with(tracing_subscriber::EnvFilter::new("info"));
+
+    // Set the combined subscriber as the global default
+    tracing::subscriber::set_global_default(subscriber)
+        .expect("setting default subscriber failed");
 
     let trace_layer = TraceLayer::new_for_http()
         .make_span_with(CustomMakeSpan)
