@@ -51,6 +51,17 @@ impl AppState {
     }
 
     pub fn delete_user(&mut self, user: User) {
+        // First, delete the user's pets
+        for pet_uuid in user.pets.iter() {
+            self.delete_pet(pet_uuid);
+        }
+
+        // Next, delete the user's pet yards
+        for pet_yard_uuid in user.owned_pet_yards.iter() {
+            self.delete_pet_yard(pet_yard_uuid);
+        }
+
+        // Finally, delete the user
         self.users.remove(&user.uuid);
     }
 
@@ -68,8 +79,14 @@ impl AppState {
         self.pets.insert(pet.uuid.clone(), pet);
     }
 
-    pub fn delete_pet(&mut self, pet: Pet) {
-        self.pets.remove(&pet.uuid);
+    pub fn delete_pet(&mut self, uuid: &str) {
+        // Remove the pet from any pet yards it is in
+        for pet_yard in self.pet_yards.values_mut() {
+            pet_yard.remove_pet(uuid.to_string());
+        }
+
+        // Finally, delete the pet
+        self.pets.remove(uuid);
     }
 
 
@@ -87,8 +104,30 @@ impl AppState {
         self.pet_yards.insert(pet_yard.uuid.clone(), pet_yard);
     }
 
-    pub fn delete_pet_yard(&mut self, pet_yard: PetYard) {
-        self.pet_yards.remove(&pet_yard.uuid);
+    pub fn delete_pet_yard(&mut self, uuid: &str) {
+        // First, remove the pet yard from all users
+        for user in self.users.values_mut() {
+            user.remove_owned_pet_yard(uuid.to_string());
+            user.remove_joined_pet_yard(uuid.to_string());
+        }
+
+        // Next, remove all pets from the pet yard
+        if let Some(pet_yard) = self.pet_yards.get(uuid) {
+            let pet_uuids: Vec<String> = pet_yard.pets.iter().cloned().collect();
+
+            // For each pet in the yard, just remove the pet yard
+            for pet_uuid in pet_uuids {
+                let mut pet = self.get_pet_by_uuid(&pet_uuid).unwrap().to_owned();
+
+                pet.remove_pet_yard();
+
+                // Update the pet
+                self.update_pet(pet.clone());
+            }
+        }
+
+        // Finally, delete the pet yard
+        self.pet_yards.remove(uuid);
     }
 }
 
@@ -153,7 +192,7 @@ impl User {
 
         // Wait a random amount of time to prevent timing attacks
         std::thread::sleep(std::time::Duration::from_millis(rand::random::<u64>() % 10));
-        
+
         hashed_password == self.h_s_password
     }
 

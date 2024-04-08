@@ -119,7 +119,7 @@ pub async fn route_delete_pet(headers: HeaderMap, Path((user_uuid, pet_uuid)): P
 
     app_state.update_user(user);
 
-    app_state.delete_pet(pet);
+    app_state.delete_pet(&pet.get_uuid());
 
     Response::builder()
         .status(StatusCode::OK)
