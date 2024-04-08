@@ -83,15 +83,21 @@ def user_menu(username, uuid, user_token):
             user_functions.create_pet(server, user_content, uuid, user_token)
         elif dec == '5': 
             user_functions.create_yard(server, user_content, uuid, user_token)
-        elif dec == 'quit':
+        elif dec == '6': 
+            user_functions.manage_account(server, user_content, uuid, user_token)
+        elif dec == 'logout':
             break
         else:
             print("I'm sorry, I didn't recognize that command.")
 
 
 def login():
-    username = input("Username: ");
-    password = maskpass.askpass(prompt="Password: ")
+    try: 
+        username = input("Username: ");
+        password = maskpass.askpass(prompt="Password: ")
+    except KeyboardInterrupt:
+        print('\nAction Canceled')
+        return
 
     login_payload = {"password": password, "username": username} 
     try:
@@ -115,18 +121,23 @@ def login():
     user_menu(username, uuid, user_token) 
 
 def signup():
-    if testing != 'True': 
-        while True:
-            email = input("Your Email: ");
-            if check_email(email):
-                break
-            else:
-                print("Invalid email. Please enter a vaild email.")
-    else: 
-        email = input("Your Email: ");
+    try:
 
-    username = input("Username: ");
-    password = maskpass.askpass(prompt="Password: ")
+        if testing != 'True': 
+            while True:
+                email = input("Your Email: ");
+                if check_email(email):
+                    break
+                else:
+                    print("Invalid email. Please enter a vaild email.")
+        else: 
+            email = input("Your Email: ");
+
+        username = input("Username: ");
+        password = maskpass.askpass(prompt="Password: ")
+    except KeyboardInterrupt:
+        print('\nAction Canceled...')
+        return
 
     signup_payload = { "email": email, "password": password, "username": username }
     response = requests.post(server + 'auth/signup', verify=VERIFY_CERT, json=signup_payload)
@@ -161,7 +172,8 @@ def user_command_list():
     [\033[32m3\033[0m] : View Owned Yards 
     [\033[32m4\033[0m] : Create a pet
     [\033[32m5\033[0m] : Create a Yard 
-    logout : close the program
+    [\033[32m6\033[0m] : Manage Your Account 
+    logout : logout of your user 
     """)
 
 if __name__ == "__main__": 

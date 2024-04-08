@@ -11,10 +11,19 @@ VERIFY_CERT = path + "/../svp-backend/cert.pem"
 # ==============================Viewing Funcitons==================================
 def view_pets(server, user_content, uuid , user_token):
     for pet_uuid in user_content["pets"]:
+
         response = requests.get(server + 'users/' + uuid + '/pets/' + pet_uuid, verify=VERIFY_CERT, headers={'X-Auth-Key': user_token})
         response_content = response.json()
-        #This should display yard names, not uuid which is what pets will ultimately contain
-        print("Pet: " + response_content['name'] + " Yard: " + response_content['pet_yard'])
+        pet_name = response_content['name']
+        yard_uuid = response_content['pet_yard']
+
+        #This is crashing because of incorrect uuid's 
+
+        response = requests.get(server + 'users/' + uuid + '/pet_yards/' + yard_uuid, verify=VERIFY_CERT, headers={'X-Auth-Key': user_token})
+        response_content = response.json()
+        yard_name = response_content['name']
+
+        print("Pet: " + pet_name + " Yard: " + yard_name)
 
 def view_joined_yards(server, user_content, uuid , user_token):
     for pet_yard_uuid in user_content["joined_pet_yards"]:
@@ -61,44 +70,57 @@ def check_yard_name(server, name, user_content, uuid, user_token):
 # ==============================Creation Funcitons==================================
 
 def create_pet(server, user_content, uuid, user_token):
+    yard_name = ""
     yard_uuid = ""
-    while True:
-        #This will be the name of the yard initially, and if the yard exists it is set to the uuid
-        yard_uuid = input("Pet yard: ");
-        if check_yard_name(server, yard_uuid, user_content, uuid, user_token):
-            yard_uuid = check_yard_name(server, yard_uuid, user_content, uuid, user_token)
-            break
-        else:
-            print("There is no yard with this name")
-
-    while True:
-        name = input("Pet name: ");
-        if check_pet_name_in_yard(server, name, yard_uuid, uuid, user_token):
-            print("There is already a pet with this name in this yard")
-        else: 
-            break
-
-    # Not sure what the rules for species will be
-    species = input("Species: ");
+    name = ""
+    species = ""
+    try:
+        while True:
+            yard_name = input("Pet yard: ");
+            if check_yard_name(server, yard_name, user_content, uuid, user_token):
+                yard_uuid = check_yard_name(server, yard_name, user_content, uuid, user_token)
+                break
+            else:
+                print("There is no yard with this name")
+        while True:
+            name = input("Pet name: ");
+            if check_pet_name_in_yard(server, name, yard_uuid, uuid, user_token):
+                print("There is already a pet with this name in this yard")
+            elif len(name) == 0: 
+                print("Pet's must have a name")
+            else: 
+                break
+        # Not sure what the rules for species will be
+        species = input("Species: ");
+    except KeyboardInterrupt: 
+        print('\nAction Canceled...')
+        return
 
     pet_payload = {"image" : 0, "name": name, "pet_yard": yard_uuid, "species": species} 
 
     try:
-        requests.post(server + 'users/' + uuid + '/pets/new', verify=VERIFY_CERT, json=pet_payload, headers={'X-Auth-Key': user_token})
-        print("Created pet " + name) 
+        response = requests.post(server + 'users/' + uuid + '/pets/new', verify=VERIFY_CERT, json=pet_payload, headers={'X-Auth-Key': user_token})
+        response_content = response.json()
+        requests.patch(server + 'users/' + uuid + '/pet_yards/' + yard_uuid + '/pet/' + response_content['uuid'], verify=VERIFY_CERT, json=pet_payload, headers={'X-Auth-Key': user_token})
+        print("Created pet " + name + " in yard " + yard_name ) 
     except ConnectionError: 
         print("Error when posting to server")
         return 1
 
 def create_yard(server, user_content, uuid, user_token):
-    while True:
-        name = input("Yard name: ");
-        # Need to check if there is another yard of the same name.
-        if check_yard_name(server, name, user_content, uuid, user_token): 
-            print("You already have a yard of this name")
-            continue
-        else:
-            break
+    try:
+        while True:
+            name = input("Yard name: ");
+            # Need to check if there is another yard of the same name.
+            if check_yard_name(server, name, user_content, uuid, user_token): 
+                print("You already have a yard of this name")
+            elif len(name) == 0:
+                print("Yard;s must have a name")
+            else:
+                break
+    except KeyboardInterrupt:
+        print('\nAction Canceled...')
+        return
         
     yard_payload = {"image" : 0, "name": name} 
     try:
@@ -109,3 +131,45 @@ def create_yard(server, user_content, uuid, user_token):
         return 1
 
 # ==============================Deletion Funcitons==================================
+
+def delete_pet(server, user_content, uuid, user_token):
+    pass
+
+def delete_yard(server, user_content, uuid, user_token):
+    pass
+
+#Immediately breaks it probably because it trys to get user content after deletion
+def delete_user(server, uuid, user_token):
+    print("Warning! This will delete all of your pet's and yard's! These will not be recoverable after you complete this action")
+    choice = input("Proceed? (Yes/No)")
+    if choice[0].lower() == 'y': 
+        requests.delete(server + 'users/' + uuid, verify=VERIFY_CERT, headers={'X-Auth-Key': user_token})
+    else: 
+        return
+
+# ==============================Account Management==================================
+
+def manage_account(server, user_content, uuid, user_token): 
+    manage_account_command_list()
+    #Prints out management list
+    while True:
+        response = requests.get(server + 'users/' + uuid, verify=VERIFY_CERT, headers={'X-Auth-Key': user_token})
+        user_content = response.json()
+        # print(user_content)
+        dec = input('> ')
+        dec = dec.rstrip()
+        #View available pets 
+        if dec == '1':
+            delete_user(server, uuid, user_token)
+        #View Joined Yards
+        elif dec == '2': 
+            break
+        else:
+            print("I'm sorry, I didn't recognize that command.")
+    pass
+
+def manage_account_command_list():
+    print("""
+    [\033[32m1\033[0m] : Delete Account
+    [\033[32m2\033[0m] : Back
+    """)
