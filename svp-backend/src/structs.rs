@@ -151,6 +151,9 @@ impl User {
         let salted_password = format!("{}{}", password, self.salt);
         let hashed_password = hash(&salted_password);
 
+        // Wait a random amount of time to prevent timing attacks
+        std::thread::sleep(std::time::Duration::from_millis(rand::random::<u64>() % 10));
+        
         hashed_password == self.h_s_password
     }
 

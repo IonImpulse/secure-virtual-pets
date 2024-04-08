@@ -42,46 +42,6 @@ pub async fn verify_token_header(headers: &http::HeaderMap, uuid: &str) -> bool 
 }
 
 
-/// Handles the login of a user.
-/// The user must provide their username and password.
-/// The password is hashed and salted.
-/// The server will return a token if the login is successful.
-pub async fn login(username: String, password: String) -> impl IntoApiResponse  {
-    let app_state = APP_STATE.lock().await;
-
-    let user = app_state.get_user_by_username(&username);
-
-    if user.is_none() {
-        return Response::builder()
-            .status(StatusCode::UNAUTHORIZED)
-            .body("User not found".to_string()) // Convert to String
-            .unwrap();
-    }
-
-    let user = user.unwrap().clone();
-
-    if !user.compare_password(&password) {
-        return Response::builder()
-            .status(StatusCode::UNAUTHORIZED)
-            .body("Incorrect password".to_string()) // Convert to String
-            .unwrap();
-    }
-
-    drop(app_state);
-
-    let mut app_state = APP_STATE.lock().await;
-
-    let token = app_state.create_token(&user);
-
-    let response_body = user.for_user_with_token(token);
-
-    Response::builder()
-        .status(StatusCode::OK)
-        .body(response_body) // Convert to String
-        .unwrap()
-}
-
-
 pub async fn signup(username: String, email: String, password: String) -> impl IntoApiResponse  {
     let app_state = APP_STATE.lock().await;
 
