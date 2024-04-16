@@ -153,40 +153,76 @@ def create_yard(server, user_content, uuid, user_token):
 # ==============================Deletion Funcitons==================================
 
 def delete_pet(server, user_content, uuid, user_token):
-    print("Warning! This will permanently delete a pet. Would you like to proceed?")
-    choice = input("Proceed? (Yes/No) ")
-    if choice[0].lower() == 'y': 
+    pet_name = "" 
+    pet_uuid = "" 
+    try:
+        print("Warning! This will permanently delete a pet. Would you like to proceed?")
+        choice = input("Proceed? (Yes/No) ")
+        if choice[0].lower() == 'y': 
 
-        while True:
-            yard_name = input("Name of yard the pet is in: ")
-            if check_yard_name(server, yard_name, user_content, uuid, user_token):
-                yard_uuid = check_yard_name(server, yard_name, user_content, uuid, user_token)
-                break
-            else:
-                print("There is no yard with this name")
+            while True:
+                yard_name = input("Name of yard the pet is in: ")
+                if check_yard_name(server, yard_name, user_content, uuid, user_token):
+                    yard_uuid = check_yard_name(server, yard_name, user_content, uuid, user_token)
+                    break
+                else:
+                    print("There is no yard with this name")
 
-        while True:
-            pet_name = input("Pet name: ");
-            if check_pet_name_in_yard(server, pet_name, yard_uuid, uuid, user_token):
-                pet_uuid = check_pet_name_in_yard(server, pet_name, yard_uuid, uuid, user_token)
-                break
-            else:
-                print(check_pet_name_in_yard(server, pet_name, yard_uuid, uuid, user_token))
-                print("No pet with this name in yard " + yard_name)
+            while True:
+                pet_name = input("Pet name: ");
+                if check_pet_name_in_yard(server, pet_name, yard_uuid, uuid, user_token):
+                    pet_uuid = check_pet_name_in_yard(server, pet_name, yard_uuid, uuid, user_token)
+                    break
+                else:
+                    print(check_pet_name_in_yard(server, pet_name, yard_uuid, uuid, user_token))
+                    print("No pet with this name in yard " + yard_name)
+    except KeyboardInterrupt: 
+        print("Action Canceled . . .\n")
+        return
 
-        print("Deleting " + pet_name + " . . . ")
-        response = requests.delete(server + 'users/' + uuid + '/pets/' + pet_uuid , verify=VERIFY_CERT, headers={'X-Auth-Key': user_token})
+    print("Deleting " + pet_name + " . . . ")
+    response = requests.delete(server + 'users/' + uuid + '/pets/' + pet_uuid , verify=VERIFY_CERT, headers={'X-Auth-Key': user_token})
 
-        if response.status_code == 200:
-            print("Successfully deleted pet " + pet_name)
-        else: 
-            print("Deletion failed") 
-            return response.status_code
+    if response.status_code == 200:
+        print("Successfully deleted pet " + pet_name)
+    else: 
+        print("Deletion failed") 
+        return response.status_code
+
 
 def delete_yard(server, user_content, uuid, user_token):
-    pass
+    yard_name = ""
+    yard_uuid = ""
+    try:
+        print("Warning! This will permanently delete a yard, including all pets within it. Would you like to proceed?")
+        choice = input("Proceed? (Yes/No) ")
+        if choice[0].lower() == 'y': 
+            while True:
+                yard_name = input("Name of yard the pet is in: ")
+                if check_yard_name(server, yard_name, user_content, uuid, user_token):
+                    yard_uuid = check_yard_name(server, yard_name, user_content, uuid, user_token)
+                    break
+                else:
+                    print("There is no yard with this name")
+    except KeyboardInterrupt:
+        print("Action Canceled...\n")
+        return
 
-#Immediately breaks it probably because it trys to get user content after deletion
+    print("Deleting " + yard_name + " . . . ")
+    response = requests.get(server + 'users/' + uuid + '/pet_yards/' + yard_uuid, verify=VERIFY_CERT, headers={'X-Auth-Key': user_token})
+    response_content = response.json()
+
+    for pet_uuid in response_content['pets']:
+        response = requests.delete(server + 'users/' + uuid + '/pets/' + pet_uuid, verify=VERIFY_CERT, headers={'X-Auth-Key': user_token})
+    
+    response = requests.delete(server + 'users/' + uuid + '/pet_yards/' + yard_uuid, verify=VERIFY_CERT, headers={'X-Auth-Key': user_token})
+
+    if response.status_code == 200:
+        print("Yard successfully deleted")
+    else: 
+        print("Error with deleting yard")
+        print(response.status_code)
+
 def delete_user(server, uuid, user_token):
     global quitflag 
     print("Warning! This will delete your account, including all of your pet's and yard's, and close the program! The account will not be recoverable after you complete this action")

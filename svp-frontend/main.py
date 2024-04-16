@@ -42,20 +42,24 @@ def main_menu():
 
     command_list()
     #Prints out initial command list
-    while True:
+    try: 
+        while True:
 
-        dec = input('> ')
+            dec = input('> ')
 
-        dec = dec.rstrip()
+            dec = dec.rstrip()
 
-        if dec == '1':
-            login()
-        elif dec == '2': 
-            signup() 
-        elif dec == 'quit':
-            break
-        else:
-            print("I'm sorry, I didn't recognize that command.")
+            if dec == '1':
+                login()
+            elif dec == '2': 
+                signup() 
+            elif dec == 'quit':
+                break
+            else:
+                print("I'm sorry, I didn't recognize that command.")
+    except KeyboardInterrupt:
+        print("Exiting...") 
+        exit(0)
 
 def user_menu(username, uuid, user_token):
     
@@ -63,34 +67,38 @@ def user_menu(username, uuid, user_token):
     user_command_list()
     #Prints out user command list
     while True:
-        response = requests.get(server + 'users/' + uuid, verify=VERIFY_CERT, headers={'X-Auth-Key': user_token})
-        user_content = response.json()
-        # print(user_content)
-        dec = input('> ')
-        dec = dec.rstrip()
-        #View available pets 
-        if dec == '1':
-            user_functions.view_pets(server, user_content, uuid, user_token)
-        #View Joined Yards
-        elif dec == '2': 
-            user_functions.view_joined_yards(server, user_content, uuid, user_token)
-        #View your yards 
-        elif dec == '3': 
-            user_functions.view_owned_yards(server, user_content, uuid, user_token)
-        elif dec == '4': 
-            user_functions.create_pet(server, user_content, uuid, user_token)
-        elif dec == '5': 
-            user_functions.create_yard(server, user_content, uuid, user_token)
-        elif dec == '6': 
-            user_functions.delete_pet(server, user_content, uuid, user_token)
-        elif dec == '7': 
-            user_functions.delete_yard(server, user_content, uuid, user_token)
-        elif dec == '8': 
-            user_functions.manage_account(server, user_content, uuid, user_token)
-        elif dec == 'logout':
-            break
-        else:
-            print("I'm sorry, I didn't recognize that command.")
+        try: 
+            response = requests.get(server + 'users/' + uuid, verify=VERIFY_CERT, headers={'X-Auth-Key': user_token})
+            user_content = response.json()
+            # print(user_content)
+            dec = input('> ')
+            dec = dec.rstrip()
+            #View available pets 
+            if dec == '1':
+                user_functions.view_pets(server, user_content, uuid, user_token)
+            #View Joined Yards
+            elif dec == '2': 
+                user_functions.view_joined_yards(server, user_content, uuid, user_token)
+            #View your yards 
+            elif dec == '3': 
+                user_functions.view_owned_yards(server, user_content, uuid, user_token)
+            elif dec == '4': 
+                user_functions.create_pet(server, user_content, uuid, user_token)
+            elif dec == '5': 
+                user_functions.create_yard(server, user_content, uuid, user_token)
+            elif dec == '6': 
+                user_functions.delete_pet(server, user_content, uuid, user_token)
+            elif dec == '7': 
+                user_functions.delete_yard(server, user_content, uuid, user_token)
+            elif dec == '8': 
+                user_functions.manage_account(server, user_content, uuid, user_token)
+            elif dec == 'logout':
+                break
+            else:
+                print("I'm sorry, I didn't recognize that command.")
+        except KeyboardInterrupt: 
+            print("Logging out...")
+            return
 
 
 def login():
