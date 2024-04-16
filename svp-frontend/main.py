@@ -1,6 +1,4 @@
 #!/usr/bin/env python
-
-import json
 import requests 
 from requests.exceptions import ConnectionError
 import os 
@@ -60,7 +58,7 @@ def main_menu():
             print("I'm sorry, I didn't recognize that command.")
 
 def user_menu(username, uuid, user_token):
-
+    
     print("Welcome " + username + ": What would you like to do?\n")
     user_command_list()
     #Prints out user command list
@@ -84,6 +82,10 @@ def user_menu(username, uuid, user_token):
         elif dec == '5': 
             user_functions.create_yard(server, user_content, uuid, user_token)
         elif dec == '6': 
+            user_functions.delete_pet(server, user_content, uuid, user_token)
+        elif dec == '7': 
+            user_functions.delete_yard(server, user_content, uuid, user_token)
+        elif dec == '8': 
             user_functions.manage_account(server, user_content, uuid, user_token)
         elif dec == 'logout':
             break
@@ -141,7 +143,12 @@ def signup():
 
     signup_payload = { "email": email, "password": password, "username": username }
     response = requests.post(server + 'auth/signup', verify=VERIFY_CERT, json=signup_payload)
-    print(response)
+
+    if response.status_code == 200:
+        print("Successfully signed up to server: " + server)
+    else: 
+        print("signup failed") 
+        return response.status_code
 
 def header():
     print(r"""
@@ -170,9 +177,11 @@ def user_command_list():
     [\033[32m1\033[0m] : View Pets
     [\033[32m2\033[0m] : View Joined Yards
     [\033[32m3\033[0m] : View Owned Yards 
-    [\033[32m4\033[0m] : Create a pet
+    [\033[32m4\033[0m] : Create a Pet
     [\033[32m5\033[0m] : Create a Yard 
-    [\033[32m6\033[0m] : Manage Your Account 
+    [\033[32m6\033[0m] : Delete a Pet
+    [\033[32m7\033[0m] : Delete a Yard 
+    [\033[32m8\033[0m] : Manage Your Account 
     logout : logout of your user 
     """)
 
