@@ -231,6 +231,8 @@ pub async fn route_add_pet_to_pet_yard(headers: HeaderMap, (user_uuid, pet_yard_
 
     app_state.update_pet_yard(pet_yard.clone());
 
+    println!("{:?}", pet_yard);
+
     Response::builder()
         .status(StatusCode::OK)
         .body(serde_json::to_string(&pet_yard).unwrap()) // Convert to String

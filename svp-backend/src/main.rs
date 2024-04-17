@@ -7,7 +7,7 @@ use aide::{
         routing::{get, patch, post},
         ApiRouter, IntoApiResponse,
     },
-    openapi::{OpenApi},
+    openapi::OpenApi,
     transform::TransformOpenApi,
 };
 
@@ -31,8 +31,6 @@ use tokio::sync::Mutex;
 
 use tower_http::trace::{self};
 use tracing::{Span};
-use tracing_appender::rolling::never;
-use tracing_appender::non_blocking;
 
 mod auth;
 mod encryption;
