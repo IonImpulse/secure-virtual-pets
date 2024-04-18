@@ -205,7 +205,7 @@ pub async fn route_remove_member_from_pet_yard(headers: HeaderMap, Path((user_uu
         .unwrap()
 }
 
-pub async fn route_add_pet_to_pet_yard(headers: HeaderMap, (user_uuid, pet_yard_uuid, pet_uuid): (Path<String>, Path<String>, Path<String>)) -> impl IntoApiResponse  {
+pub async fn route_add_pet_to_pet_yard(headers: HeaderMap, Path((user_uuid, pet_yard_uuid, pet_uuid)): Path<(String, String, String)>) -> impl IntoApiResponse  {
     // Verify token
     if !verify_token_header(&headers, &user_uuid).await {
         return Response::builder()
@@ -214,7 +214,9 @@ pub async fn route_add_pet_to_pet_yard(headers: HeaderMap, (user_uuid, pet_yard_
             .unwrap();
     }
 
+
     let mut app_state = APP_STATE.lock().await;
+
 
     let pet_yard = app_state.get_pet_yard_by_uuid(&pet_yard_uuid);
 
@@ -230,8 +232,6 @@ pub async fn route_add_pet_to_pet_yard(headers: HeaderMap, (user_uuid, pet_yard_
     pet_yard.add_pet(pet_uuid.to_string());
 
     app_state.update_pet_yard(pet_yard.clone());
-
-    println!("{:?}", pet_yard);
 
     Response::builder()
         .status(StatusCode::OK)

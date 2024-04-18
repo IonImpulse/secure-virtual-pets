@@ -90,7 +90,7 @@ def create_pet(server, user_content, uuid, user_token):
             if check_pet_name_in_yard(server, name, yard_uuid, uuid, user_token):
                 print("There is already a pet with this name in this yard")
             elif len(name) == 0: 
-                print("Pet's must have a name")
+                print("Pets must have a name")
             else: 
                 break
         # Not sure what the rules for species will be
@@ -110,6 +110,7 @@ def create_pet(server, user_content, uuid, user_token):
             print(response.status_code)
             return 
         response_content = response.json()
+        print(response_content)
         pet_uuid = response_content['uuid']
         response = requests.patch(server + 'users/' + uuid + '/pet_yards/' + yard_uuid + '/pet/' + pet_uuid, verify=VERIFY_CERT, headers={'X-Auth-Key': user_token})
         if response.status_code == 200:
@@ -117,6 +118,7 @@ def create_pet(server, user_content, uuid, user_token):
         else: 
             print("Failed to patch pet into yard, pet not created") 
             print(response.status_code)
+            print(response.text)
             print(server + 'users/' + uuid + '/pet_yards/' + yard_uuid + '/pet/' + pet_uuid)
             requests.delete(server + 'users/' + uuid + '/pets/' + pet_uuid, verify=VERIFY_CERT, json=pet_payload, headers={'X-Auth-Key': user_token})
             return 
@@ -227,7 +229,7 @@ def delete_yard(server, user_content, uuid, user_token):
 
 def delete_user(server, uuid, user_token):
     global quitflag 
-    print("Warning! This will delete your account, including all of your pet's and yard's, and close the program! The account will not be recoverable after you complete this action")
+    print("Warning! This will delete your account, including all of your pets and yards, and close the program! The account will not be recoverable after you complete this action")
     choice = input("Proceed? (Yes/No) ")
     if choice[0].lower() == 'y': 
         requests.delete(server + 'users/' + uuid, verify=VERIFY_CERT, headers={'X-Auth-Key': user_token})
