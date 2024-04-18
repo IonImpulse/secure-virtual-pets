@@ -110,7 +110,7 @@ def create_pet(server, user_content, uuid, user_token):
             print(response.status_code)
             return 
         response_content = response.json()
-        print(response_content)
+        # print(response_content)
         pet_uuid = response_content['uuid']
         response = requests.patch(server + 'users/' + uuid + '/pet_yards/' + yard_uuid + '/pet/' + pet_uuid, verify=VERIFY_CERT, headers={'X-Auth-Key': user_token})
         if response.status_code == 200:
