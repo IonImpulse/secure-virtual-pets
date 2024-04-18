@@ -111,7 +111,7 @@ def create_pet(server, user_content, uuid, user_token):
             return 
         response_content = response.json()
         pet_uuid = response_content['uuid']
-        response = requests.patch(server + 'users/' + uuid + '/pet_yards/' + yard_uuid + '/pet/' + pet_uuid, verify=VERIFY_CERT, json=pet_payload, headers={'X-Auth-Key': user_token})
+        response = requests.patch(server + 'users/' + uuid + '/pet_yards/' + yard_uuid + '/pet/' + pet_uuid, verify=VERIFY_CERT, headers={'X-Auth-Key': user_token})
         if response.status_code == 200:
             pass
         else: 
@@ -198,12 +198,14 @@ def delete_yard(server, user_content, uuid, user_token):
         choice = input("Proceed? (Yes/No) ")
         if choice[0].lower() == 'y': 
             while True:
-                yard_name = input("Name of yard the pet is in: ")
+                yard_name = input("Name of yard: ")
                 if check_yard_name(server, yard_name, user_content, uuid, user_token):
                     yard_uuid = check_yard_name(server, yard_name, user_content, uuid, user_token)
                     break
                 else:
                     print("There is no yard with this name")
+        else: 
+            return
     except KeyboardInterrupt:
         print("Action Canceled...\n")
         return
