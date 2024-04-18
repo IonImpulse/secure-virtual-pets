@@ -143,7 +143,12 @@ def signup():
         return
 
     signup_payload = { "email": email, "password": password, "username": username }
-    response = requests.post(server + 'auth/signup', verify=VERIFY_CERT, json=signup_payload)
+
+    try:
+        response = requests.post(server + 'auth/signup', verify=VERIFY_CERT, json=signup_payload)
+    except ConnectionError: 
+        print("Connection was refused")
+        return 1
 
     if response.status_code == 200:
         print("Successfully signed up to server: " + server)
