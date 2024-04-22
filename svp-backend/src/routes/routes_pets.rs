@@ -154,3 +154,67 @@ pub async fn route_create_pet(headers: HeaderMap, user_uuid: Path<String>, paylo
         .body(serde_json::to_string(&pet).unwrap()) // Convert to String
         .unwrap()
 }
+
+pub async fn route_feed_pet(headers: HeaderMap, Path((user_uuid, pet_uuid)): Path<(String, String)>) -> impl IntoApiResponse  {
+    // Verify token
+    if !verify_token_header(&headers, &user_uuid).await {
+        return Response::builder()
+            .status(StatusCode::UNAUTHORIZED)
+            .body("Unauthorized".to_string()) // Convert to String
+            .unwrap();
+    }
+
+    let mut app_state = APP_STATE.lock().await;
+
+    let pet = app_state.get_pet_by_uuid(&pet_uuid);
+
+    if pet.is_none() {
+        return Response::builder()
+            .status(StatusCode::NOT_FOUND)
+            .body("Pet not found".to_string()) // Convert to String
+            .unwrap();
+    }
+
+    let mut pet = pet.unwrap().to_owned();
+
+    pet.feed();
+
+    app_state.update_pet(pet.clone());
+
+    Response::builder()
+        .status(StatusCode::OK)
+        .body(serde_json::to_string(&pet).unwrap()) // Convert to String
+        .unwrap()
+}
+
+pub async fn route_pet_pet(headers: HeaderMap, Path((user_uuid, pet_uuid)): Path<(String, String)>) -> impl IntoApiResponse  {
+    // Verify token
+    if !verify_token_header(&headers, &user_uuid).await {
+        return Response::builder()
+            .status(StatusCode::UNAUTHORIZED)
+            .body("Unauthorized".to_string()) // Convert to String
+            .unwrap();
+    }
+
+    let mut app_state = APP_STATE.lock().await;
+
+    let pet = app_state.get_pet_by_uuid(&pet_uuid);
+
+    if pet.is_none() {
+        return Response::builder()
+            .status(StatusCode::NOT_FOUND)
+            .body("Pet not found".to_string()) // Convert to String
+            .unwrap();
+    }
+
+    let mut pet = pet.unwrap().to_owned();
+
+    pet.pet();
+
+    app_state.update_pet(pet.clone());
+
+    Response::builder()
+        .status(StatusCode::OK)
+        .body(serde_json::to_string(&pet).unwrap()) // Convert to String
+        .unwrap()
+}

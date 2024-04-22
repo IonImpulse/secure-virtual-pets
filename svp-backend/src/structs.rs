@@ -85,8 +85,22 @@ impl AppState {
             pet_yard.remove_pet(uuid.to_string());
         }
 
+        // Remove the pet from any users who own it
+        for user in self.users.values_mut() {
+            user.remove_pet(uuid.to_string());
+        }
+
         // Finally, delete the pet
         self.pets.remove(uuid);
+    }
+
+    pub fn kill_unloved_pets(&mut self) {
+        for pet in self.pets.clone().values() {
+            if pet.should_die() {
+                tracing::info!("Pet {} has died", pet.get_name());
+                self.delete_pet(&pet.uuid);
+            }
+        }
     }
 
 
@@ -266,6 +280,10 @@ impl User {
         self.joined_pet_yards.retain(|uuid| uuid != &pet_yard_uuid);
     }
 
+    pub fn get_dms(&self, recipient_uuid: &str) -> String {
+        serde_json::json!(self.chat_logs.get(recipient_uuid).unwrap_or(&vec![])).to_string()
+    }
+
 
 }
 
@@ -337,6 +355,8 @@ pub struct Pet {
     species: String,
     level: u128,
     experience: u8,
+    last_fed: u64,
+    last_pet: u64,
     // UUID of the pet yard the pet is in, or None if the pet is not in a pet yard
     pet_yard: Option<String>,
 }
@@ -351,6 +371,8 @@ impl Pet {
             level: 1,
             experience: 0,
             pet_yard,
+            last_fed: chrono::Utc::now().timestamp_millis() as u64,
+            last_pet: chrono::Utc::now().timestamp_millis() as u64,
         }
     }
 
@@ -394,6 +416,28 @@ impl Pet {
         self.experience
     }
 
+    pub fn feed(&mut self) {
+        self.add_experience(1);
+        // Update last fed time to plus 1 day, or now if it's been more than a day
+        let now = chrono::Utc::now().timestamp_millis() as u64;
+        if self.last_fed + 1000 * 60 * 60 * 24 > now {
+            self.last_fed = now;
+        } else {
+            self.last_fed += 1000 * 60 * 60 * 24;
+        }
+    }
+
+    pub fn pet(&mut self) {
+        self.add_experience(5);
+
+        let now = chrono::Utc::now().timestamp_millis() as u64;
+        if self.last_pet + 1000 * 60 * 60 * 24 > now {
+            self.last_pet = now;
+        } else {
+            self.last_pet += 1000 * 60 * 60 * 24;
+        }        
+    }
+
     pub fn add_experience(&mut self, experience: u8) {
         self.experience += experience;
         if self.experience >= EXP_PER_LEVEL {
@@ -408,6 +452,12 @@ impl Pet {
 
     pub fn set_image(&mut self, image: u64) {
         self.image = image;
+    }
+
+    pub fn should_die(&self) -> bool {
+        let now = chrono::Utc::now().timestamp_millis() as u64;
+        // If the pet has not been fed or petted in 3 days, it dies
+        self.last_fed + 1000 * 60 * 60 * 24 * 3 < now || self.last_pet + 1000 * 60 * 60 * 24 * 7 < now
     }
 
     pub fn for_public(&self) -> String {

@@ -28,6 +28,7 @@ use tower_http::{trace::TraceLayer, BoxError};
 use once_cell::sync::Lazy;
 use std::{net::SocketAddr, time::Duration};
 use tokio::sync::Mutex;
+use tokio::time;
 
 use tower_http::trace::{self};
 use tracing::{Span};
@@ -78,6 +79,9 @@ async fn main() {
     };
 
     println!("Listening on {}", addr);
+
+    // Spawn pet killer
+    tokio::spawn(check_kill_pets());
     
     let file_appender = tracing_appender::rolling::never("", "svp.log");
     let (file_writer, _guard) = tracing_appender::non_blocking(file_appender);
@@ -131,6 +135,14 @@ async fn main() {
             get(route_get_pet)
                 .patch(route_update_pet)
                 .delete(route_delete_pet),
+        )
+        .api_route(
+            "/users/:user_uuid/pets/:pet_uuid/feed",
+            post(route_feed_pet)
+        )
+        .api_route(
+            "/users/:user_uuid/pets/:pet_uuid/pet",
+            post(route_pet_pet)
         )
         .api_route("/users/:user_uuid/pets/new", post(route_create_pet))
         // Routes for petyards
@@ -193,6 +205,27 @@ async fn main() {
         .await
         .unwrap();
 }
+
+
+async fn check_kill_pets() {
+    // Define a one-minute interval
+    let mut interval = time::interval(Duration::from_secs(60));
+
+    loop {
+        // Wait for the next interval tick
+        interval.tick().await;
+
+        tracing::info!("Checking which pets to kill!");
+
+        let mut state = APP_STATE.lock().await;
+
+        state.kill_unloved_pets();
+
+        drop(state);
+    }
+}
+
+
 
 #[derive(Debug, Clone)]
 struct CustomMakeSpan;
