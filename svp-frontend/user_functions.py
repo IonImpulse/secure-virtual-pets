@@ -4,6 +4,10 @@ path = os.path.dirname(os.path.abspath(__file__))
 
 VERIFY_CERT = path + "/../svp-backend/cert.pem"
 
+from pet_functions import get_random_pet_art, get_pet_art
+
+specieslist = "Avaiable Species: Dogs" 
+available_specices = ["dog"] 
 
 #TODO: Control C on the menu's should probably just log you out / exit the application instead of crashing
 #      Ok creating a pet still doesn't place it in the yard, gotta do that
@@ -15,6 +19,7 @@ def view_pets(server, user_content, uuid , user_token):
         response = requests.get(server + 'users/' + uuid + '/pets/' + pet_uuid, verify=VERIFY_CERT, headers={'X-Auth-Key': user_token})
         response_content = response.json()
         pet_name = response_content['name']
+        pet_image_index = response_content['image']
         pet_species = response_content['species']
         pet_level = response_content['level']
         yard_uuid = response_content['pet_yard']
@@ -24,7 +29,8 @@ def view_pets(server, user_content, uuid , user_token):
         response = requests.get(server + 'users/' + uuid + '/pet_yards/' + yard_uuid, verify=VERIFY_CERT, headers={'X-Auth-Key': user_token})
         response_content = response.json()
         yard_name = response_content['name']
-
+        
+        print(get_pet_art(pet_species + ".txt",pet_image_index))
         print("Pet: " + pet_name + " Species: " + pet_species + " Level: " + str(pet_level) + " Yard: " + yard_name)
 
 def view_joined_yards(server, user_content, uuid , user_token):
@@ -93,13 +99,21 @@ def create_pet(server, user_content, uuid, user_token):
                 print("Pets must have a name")
             else: 
                 break
-        # Not sure what the rules for species will be
-        species = input("Species: ");
+        print(specieslist)
+        
+        while True: 
+            species = input("Species: ");
+            if species in available_specices:
+                break
+            else: 
+                print("Must be an available species")
+
     except KeyboardInterrupt: 
         print('\nAction Canceled...')
         return
 
-    pet_payload = {"image" : 0, "name": name, "pet_yard": yard_uuid, "species": species} 
+    image = get_random_pet_art(species + '.txt')
+    pet_payload = {"image" : image, "name": name, "pet_yard": yard_uuid, "species": species} 
 
     try:
         response = requests.post(server + 'users/' + uuid + '/pets/new', verify=VERIFY_CERT, json=pet_payload, headers={'X-Auth-Key': user_token})
@@ -108,6 +122,7 @@ def create_pet(server, user_content, uuid, user_token):
         else: 
             print("Failed to make pet failed") 
             print(response.status_code)
+            print(response.text)
             return 
         response_content = response.json()
         # print(response_content)
