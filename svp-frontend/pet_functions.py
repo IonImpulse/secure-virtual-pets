@@ -136,3 +136,29 @@ def feed_yard(server, user_content, uuid, user_token):
 
     print("Yard successfully fed")
     
+def play_with_pet(server, uuid, user_token, pet_uuid): 
+    response = requests.post(server + 'users/' + uuid + '/pets/' + pet_uuid + '/pet', verify=VERIFY_CERT, headers={'X-Auth-Key': user_token})
+   
+def play_with_yard(server, user_content, uuid, user_token):
+    yard_name = ""
+    yard_uuid = ""
+    try:
+        while True:
+            yard_name = input("Name of yard: ")
+            if user_functions.check_yard_name(server, yard_name, user_content, uuid, user_token):
+                yard_uuid = user_functions.check_yard_name(server, yard_name, user_content, uuid, user_token)
+                break
+            else:
+                print("There is no yard with this name")
+    except KeyboardInterrupt:
+        print("Action Canceled...\n")
+        return
+
+    print("Playing with all pets in " + yard_name + " . . . ")
+    response = requests.get(server + 'users/' + uuid + '/pet_yards/' + yard_uuid, verify=VERIFY_CERT, headers={'X-Auth-Key': user_token})
+    response_content = response.json()
+
+    for pet_uuid in response_content['pets']:
+        play_with_pet(server, uuid, user_token, pet_uuid)
+
+    print("Yard successfully played with")

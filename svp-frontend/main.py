@@ -112,6 +112,7 @@ def user_menu(username, uuid, user_token):
         user_functions.create_pet,
         user_functions.create_yard,
         pet_functions.feed_yard,
+        pet_functions.play_with_yard,
         user_functions.delete_pet,
         user_functions.delete_yard,
         user_functions.manage_account
@@ -237,9 +238,10 @@ def user_command_list():
     [\033[32m4\033[0m] : Create a Pet
     [\033[32m5\033[0m] : Create a Yard 
     [\033[32m6\033[0m] : Feed a Yard 
-    [\033[32m7\033[0m] : Delete a Pet
-    [\033[32m8\033[0m] : Delete a Yard 
-    [\033[32m9\033[0m] : Manage Your Account 
+    [\033[32m7\033[0m] : Play with a Yard 
+    [\033[32m8\033[0m] : Delete a Pet
+    [\033[32m9\033[0m] : Delete a Yard 
+    [\033[32m10\033[0m] : Manage Your Account 
     logout : logout of your user 
     """)
 
