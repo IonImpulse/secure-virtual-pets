@@ -9,8 +9,8 @@ VERIFY_CERT = path + "/../svp-backend/cert.pem"
 import user_functions
 
 def print_petsheet(petsheet): 
-
-    with open('pet_art/' + petsheet) as f_obj:
+    
+    with open(path + '/pet_art/' + petsheet) as f_obj:
 
         petsheet = f_obj.readlines()
         separators = [] 
@@ -35,7 +35,7 @@ def print_petsheet(petsheet):
 
 def get_random_pet_art(petsheet): 
 
-    with open('pet_art/' + petsheet) as f_obj:
+    with open(path + '/pet_art/' + petsheet) as f_obj:
 
         petsheet = f_obj.readlines()
         separators = [] 
@@ -59,12 +59,13 @@ def get_random_pet_art(petsheet):
                 except IndexError: 
                     break
 
+        print(pet)
         return randsep
 
 
 def get_pet_art(petsheet, index): 
 
-    with open('pet_art/' + petsheet) as f_obj:
+    with open(path + '/pet_art/' + petsheet) as f_obj:
 
         petsheet = f_obj.readlines()
         separators = [] 

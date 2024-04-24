@@ -1,5 +1,7 @@
 import requests
 import os
+import time
+
 path = os.path.dirname(os.path.abspath(__file__))
 
 VERIFY_CERT = path + "/../svp-backend/cert.pem"
@@ -15,15 +17,18 @@ available_specices = ["dog"]
 # ==============================Viewing Funcitons==================================
 def view_pets(server, user_content, uuid , user_token):
     for pet_uuid in user_content["pets"]:
-
+        ts = time.time()
         response = requests.get(server + 'users/' + uuid + '/pets/' + pet_uuid, verify=VERIFY_CERT, headers={'X-Auth-Key': user_token})
         response_content = response.json()
+        # print(response_content)
         pet_name = response_content['name']
         pet_image_index = response_content['image']
         pet_species = response_content['species']
         pet_level = response_content['level']
         yard_uuid = response_content['pet_yard']
-
+        
+        time_spent_unfed = ts - response_content['last_fed']
+        time_spent_unpet = ts - response_content['last_pet']
         #This can fail if an incorrect uuid is passed, but this should never occur.
 
         response = requests.get(server + 'users/' + uuid + '/pet_yards/' + yard_uuid, verify=VERIFY_CERT, headers={'X-Auth-Key': user_token})
@@ -32,6 +37,20 @@ def view_pets(server, user_content, uuid , user_token):
         
         print(get_pet_art(pet_species + ".txt",pet_image_index))
         print("Pet: " + pet_name + " Species: " + pet_species + " Level: " + str(pet_level) + " Yard: " + yard_name)
+        
+        if time_spent_unfed < 86400: 
+            print("Stomach Status: Satiated")
+        elif time_spent_unfed < 172800: 
+            print("Stomach Status: Hungry")
+        else:
+            print("Stomach Status: Starving")
+
+        if time_spent_unpet < 86400: 
+            print("Happiness Status: Joyful")
+        elif time_spent_unpet < 172800: 
+            print("Happiness Status: Neglected")
+        else:
+            print("Happiness Status: Depressed")
 
 def view_joined_yards(server, user_content, uuid , user_token):
     for pet_yard_uuid in user_content["joined_pet_yards"]:
