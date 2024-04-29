@@ -8,8 +8,8 @@ VERIFY_CERT = path + "/../svp-backend/cert.pem"
 
 from pet_functions import get_random_pet_art, get_pet_art
 
-specieslist = "Avaiable Species: Dogs" 
-available_specices = ["dog"] 
+specieslist = "Avaiable Species: Dogs, Cats, Fish" 
+available_specices = ["dog", "cat", "fish"] 
 
 #TODO: Control C on the menu's should probably just log you out / exit the application instead of crashing
 #      Ok creating a pet still doesn't place it in the yard, gotta do that
